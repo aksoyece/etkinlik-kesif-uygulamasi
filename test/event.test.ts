@@ -50,6 +50,15 @@ describe('etkinlik yardımcıları', () => {
     expect(pickEventImage(sampleEvent.images)).toBe('https://cdn.example/cover.jpg')
   })
 
+  it('Ticketmaster kapak görselini (16:9, fallback olmayan) tercih eder', () => {
+    const images = [
+      { url: 'http://cdn.example/huge-square.jpg', ratio: '1_1', width: 2048, height: 2048, fallback: false },
+      { url: 'http://cdn.example/RETINA_LANDSCAPE_16_9.jpg', ratio: '16_9', width: 1024, height: 576, fallback: false },
+      { url: 'http://cdn.example/fallback.jpg', ratio: '16_9', width: 2048, height: 1152, fallback: true }
+    ]
+    expect(pickEventImage(images)).toBe('https://cdn.example/RETINA_LANDSCAPE_16_9.jpg')
+  })
+
   it('tarihi biçimler', () => {
     const label = formatEventDate(sampleEvent.dates)
     expect(label).toContain('2026')

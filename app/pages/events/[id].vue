@@ -173,7 +173,7 @@ const barcodeStyle = computed(() => {
           <div class="ticket-stub flex-col">
             <div class="relative h-80 sm:h-96 w-full overflow-hidden">
               <img
-                :src="event.images[0] || event.image || '/placeholder-event.svg'"
+                :src="event.image || event.images[0] || '/placeholder-event.svg'"
                 :alt="event.name"
                 class="h-full w-full object-cover"
               >

@@ -23,24 +23,40 @@ export function toHttps(url?: string): string | undefined {
   return url.replace(/^http:/, 'https:')
 }
 
+function ticketmasterImageScore(image: TicketmasterImage): number {
+  const url = image.url || ''
+  let score = 0
+
+  // Ticketmaster.com etkinlik kapakları fallback placeholder kullanmaz
+  if (image.fallback) {
+    score -= 100_000
+  }
+
+  // Liste ve detay sayfalarında 16:9 landscape kapak kullanılır
+  if (image.ratio === '16_9' || url.includes('16_9')) {
+    score += 50_000
+  } else if (image.ratio === '3_2' || url.includes('3_2')) {
+    score += 20_000
+  } else if (image.ratio === '4_3' || url.includes('4_3')) {
+    score += 5_000
+  }
+
+  // Ticketmaster'ın kendi named varyantları (sitede görünen kapak bunlardan gelir)
+  if (url.includes('RETINA_LANDSCAPE_16_9')) score += 8_000
+  else if (url.includes('TABLET_LANDSCAPE_LARGE_16_9')) score += 7_000
+  else if (url.includes('TABLET_LANDSCAPE_16_9')) score += 6_000
+  else if (url.includes('SOURCE')) score += 1_000
+
+  score += image.width ?? 0
+  return score
+}
+
 export function pickEventImage(images?: TicketmasterImage[]): string | undefined {
   if (!images?.length) {
     return undefined
   }
 
-  // 4. Görsel Çözünürlüğü: En yüksek çözünürlüğe (width * height) sahip görseli seçer
-  const ranked = [...images].sort((a, b) => {
-    const wA = a.width ?? 0
-    const hA = a.height ?? wA // height yoksa kare kabul ederek width kullanıyoruz
-    const wB = b.width ?? 0
-    const hB = b.height ?? wB // height yoksa kare kabul ederek width kullanıyoruz
-
-    const areaA = wA * hA
-    const areaB = wB * hB
-
-    return areaB - areaA
-  })
-
+  const ranked = [...images].sort((a, b) => ticketmasterImageScore(b) - ticketmasterImageScore(a))
   return toHttps(ranked[0]?.url)
 }
 
@@ -171,9 +187,9 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
 
 export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetail {
   const summary = mapTicketmasterEvent(event)
+  const cover = summary.image
   const images = [...new Set(
-    (event.images ?? [])
-      .map(image => toHttps(image.url))
+    [cover, ...(event.images ?? []).map(image => toHttps(image.url))]
       .filter((url): url is string => Boolean(url))
   )]
 
