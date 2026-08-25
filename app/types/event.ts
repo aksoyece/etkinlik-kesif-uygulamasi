@@ -198,6 +198,8 @@ export interface FavoriteEvent {
   name: string
   image?: string
   dateLabel: string
+  localDate?: string
+  localTime?: string
   city?: string
   venue?: string
   category?: string

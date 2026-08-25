@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { mapsUrl, toFavoriteEvent } from '#shared/utils/event'
+import { mapsUrl, toFavoriteEvent, uniqueGalleryImages } from '#shared/utils/event'
+import { buildGoogleCalendarUrl, buildIcsContent } from '#shared/utils/calendar'
 
 const route = useRoute()
+const requestUrl = useRequestURL()
 const toast = useToast()
 const favorites = useFavoritesStore()
 
@@ -12,6 +14,19 @@ const { venue } = useVenue(computed(() => event.value?.venueId))
 const favorited = computed(() => event.value ? favorites.isFavorite(event.value.id) : false)
 const venueInfo = computed(() => venue.value || event.value?.venueDetail)
 const mapLink = computed(() => mapsUrl(venueInfo.value))
+const galleryImages = computed(() => uniqueGalleryImages(event.value?.images ?? []))
+const googleCalendarUrl = computed(() => event.value ? buildGoogleCalendarUrl(event.value) : undefined)
+const pageUrl = computed(() => `${requestUrl.origin}${route.fullPath}`)
+
+const selectedImage = ref<string | null>(null)
+const galleryOpen = computed({
+  get: () => Boolean(selectedImage.value),
+  set: (open: boolean) => {
+    if (!open) {
+      selectedImage.value = null
+    }
+  }
+})
 
 // 9. 404 Sayfası: Olmayan bir etkinlik ID'sine gidildiğinde fatal 404 hatası fırlatır, böylece custom error.vue tetiklenir
 watch(error, (newError) => {
@@ -30,8 +45,96 @@ watch(error, (newError) => {
 
 useSeoMeta({
   title: () => event.value?.name || 'Etkinlik detayı',
-  description: () => event.value?.info || event.value?.name || 'Etkinlik detayı'
+  description: () => event.value?.info || `${event.value?.name || 'Etkinlik'} — ${event.value?.dateLabel || ''}`.trim(),
+  ogTitle: () => event.value?.name || 'Etkinlik detayı',
+  ogDescription: () => event.value?.info || event.value?.name || 'Etkinlik detayı',
+  ogImage: () => event.value?.image,
+  ogUrl: () => pageUrl.value,
+  twitterCard: 'summary_large_image',
+  twitterTitle: () => event.value?.name || 'Etkinlik detayı',
+  twitterDescription: () => event.value?.info || event.value?.name,
+  twitterImage: () => event.value?.image
 })
+
+useHead(() => {
+  if (!event.value) {
+    return {}
+  }
+
+  const start = event.value.localDate
+    ? `${event.value.localDate}T${event.value.localTime || '00:00:00'}`
+    : undefined
+
+  return {
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Event',
+          'name': event.value.name,
+          'startDate': start,
+          'image': event.value.image,
+          'url': pageUrl.value,
+          'eventStatus': 'https://schema.org/EventScheduled',
+          'location': venueInfo.value
+            ? {
+                '@type': 'Place',
+                'name': venueInfo.value.name,
+                'address': venueInfo.value.address
+              }
+            : undefined,
+          'offers': event.value.ticketUrl
+            ? {
+                '@type': 'Offer',
+                'url': event.value.ticketUrl,
+                'availability': 'https://schema.org/InStock'
+              }
+            : undefined
+        })
+      }
+    ]
+  }
+})
+
+function downloadIcs() {
+  if (!event.value) {
+    return
+  }
+
+  const content = buildIcsContent(event.value)
+  if (!content) {
+    toast.add({ title: 'Takvim tarihi yok', color: 'warning' })
+    return
+  }
+
+  const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `${event.value.name.replace(/[^\wğüşöçıİĞÜŞÖÇ\s-]+/gi, '').trim() || 'etkinlik'}.ics`
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+async function shareEvent() {
+  const title = event.value?.name || 'Etkinlik'
+  const url = pageUrl.value
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text: event.value?.dateLabel, url })
+      return
+    }
+
+    await navigator.clipboard.writeText(url)
+    toast.add({ title: 'Bağlantı kopyalandı', color: 'success' })
+  } catch (shareError) {
+    if ((shareError as { name?: string }).name === 'AbortError') {
+      return
+    }
+    toast.add({ title: 'Paylaşılamadı', color: 'error' })
+  }
+}
 
 function toggleFavorite() {
   if (!event.value) {
@@ -264,6 +367,37 @@ const barcodeStyle = computed(() => {
                 >
                   Bilet al
                 </UButton>
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-calendar-plus"
+                  size="lg"
+                  class="transition-transform duration-200 hover:scale-105 active:scale-95"
+                  @click="downloadIcs"
+                >
+                  Takvime ekle
+                </UButton>
+                <UButton
+                  v-if="googleCalendarUrl"
+                  :to="googleCalendarUrl"
+                  target="_blank"
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-calendar"
+                  size="lg"
+                >
+                  Google Takvim
+                </UButton>
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-share-2"
+                  size="lg"
+                  class="transition-transform duration-200 hover:scale-105 active:scale-95"
+                  @click="shareEvent"
+                >
+                  Paylaş
+                </UButton>
               </div>
 
               <!-- 8. Barkod Deseni Çeşitliliği: Detay sayfasındaki bilet stub'ına da dinamik barkod eklendi -->
@@ -273,6 +407,32 @@ const barcodeStyle = computed(() => {
               />
             </div>
           </div>
+
+          <section
+            v-if="galleryImages.length > 1"
+            class="space-y-4"
+          >
+            <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white">
+              Görseller
+            </h2>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <button
+                v-for="image in galleryImages"
+                :key="image"
+                type="button"
+                class="ticket-stub overflow-hidden p-0 aspect-[4/3]"
+                @click="selectedImage = image"
+              >
+                <img
+                  :src="image"
+                  :alt="event.name"
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                >
+              </button>
+            </div>
+          </section>
 
           <!-- Etkinlik Açıklaması -->
           <section
@@ -451,5 +611,19 @@ const barcodeStyle = computed(() => {
         </aside>
       </div>
     </article>
+
+    <UModal
+      v-model:open="galleryOpen"
+      :ui="{ content: 'max-w-4xl p-0 overflow-hidden' }"
+    >
+      <template #content>
+        <img
+          v-if="selectedImage"
+          :src="selectedImage"
+          :alt="event?.name"
+          class="w-full h-auto object-contain max-h-[80vh] bg-black"
+        >
+      </template>
+    </UModal>
   </UContainer>
 </template>

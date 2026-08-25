@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { sortFavoritesByDate } from '#shared/utils/calendar'
+
 const favorites = useFavoritesStore()
+const sortedFavorites = computed(() => sortFavoritesByDate(favorites.items))
 
 useSeoMeta({
   title: 'Favoriler',
-  description: 'Kaydettiğiniz etkinlikler'
+  description: 'Kaydettiğiniz yaklaşan etkinlikler, tarihe göre sıralanır.'
 })
 
 onMounted(() => {
@@ -22,7 +25,7 @@ onMounted(() => {
           Favoriler
         </h1>
         <p class="text-muted">
-          {{ favorites.count }} etkinlik kaydedildi. Favoriler tarayıcınızda saklanır.
+          {{ favorites.count }} etkinlik kaydedildi. En yakın tarih en üstte.
         </p>
       </div>
       <UButton
@@ -74,7 +77,7 @@ onMounted(() => {
       class="grid gap-8 sm:gap-10 sm:grid-cols-1 lg:grid-cols-2"
     >
       <EventCard
-        v-for="event in favorites.items"
+        v-for="event in sortedFavorites"
         :key="event.id"
         :event="event"
       />

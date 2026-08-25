@@ -6,7 +6,7 @@ function readString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }
 
-export default defineEventHandler(async (event): Promise<EventListResult> => {
+export default defineCachedEventHandler(async (event): Promise<EventListResult> => {
   const query = getQuery(event)
   const page = Math.max(1, Number(query.page) || 1)
   const size = Math.min(20, Math.max(1, Number(query.size) || PAGE_SIZE))
@@ -30,5 +30,22 @@ export default defineEventHandler(async (event): Promise<EventListResult> => {
     size,
     total,
     totalPages: Math.max(1, Math.ceil(total / size) || 1)
+  }
+}, {
+  maxAge: 60 * 5,
+  swr: true,
+  getKey: (event) => {
+    const query = getQuery(event)
+    return [
+      'events',
+      query.keyword,
+      query.city,
+      query.classificationName,
+      query.startDate,
+      query.endDate,
+      query.sort,
+      query.page,
+      query.size
+    ].join(':')
   }
 })

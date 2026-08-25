@@ -8,7 +8,12 @@ Ticketmaster Discovery API 2.0 üzerinden gerçek etkinlik verisi çeken, Nuxt 4
 - Kartlarda ad, görsel, tarih, şehir, mekan ve kategori
 - Arama, şehir / kategori / tarih filtreleri, sıralama ve sayfalama
 - Etkinlik detayı: etkinlik, sanatçı ve mekan bilgisi
-- Pinia + Local Storage ile favoriler
+- Takvime ekle (.ics) ve Google Takvim
+- Bağlantı paylaşımı
+- Etkinlik detayında görsel galerisi
+- Favorileri tarihe göre sıralama
+- SEO (Open Graph + JSON-LD)
+- Ticketmaster yanıtları için sunucu önbelleği
 - Yükleniyor, hata ve boş durumları
 - Koyu / açık tema
 - TypeScript ve Zod doğrulaması
@@ -38,6 +43,18 @@ npm run dev
 ```
 
 Adres: `http://localhost:3000`
+
+Canlı site: https://etkinlik-kesif-uygulamasi.vercel.app
+
+## Vercel ortam değişkeni
+
+Ticketmaster anahtarı tarayıcıya gitmez; yalnızca sunucuda okunur.
+
+1. [Vercel Dashboard](https://vercel.com) > proje > **Settings** > **Environment Variables**
+2. `NUXT_TICKETMASTER_API_KEY` ekleyin (Production / Preview / Development)
+3. Redeploy edin
+
+Anahtar yoksa `/api/events` 500 döner.
 
 ## Komutlar
 

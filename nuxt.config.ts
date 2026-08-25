@@ -44,7 +44,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    ticketmasterApiKey: process.env.NUXT_TICKETMASTER_API_KEY || 'pLOeuGq2JL05uEGrZG7DuGWu6sh2OnMz',
+    ticketmasterApiKey: process.env.NUXT_TICKETMASTER_API_KEY || '',
     ticketmasterBaseUrl: 'https://app.ticketmaster.com/discovery/v2'
   },
 

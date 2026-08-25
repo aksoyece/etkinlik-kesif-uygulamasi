@@ -1,7 +1,7 @@
 import type { TicketmasterVenue, VenueSummary } from '#shared/types/event'
 import { mapVenue } from '#shared/utils/event'
 
-export default defineEventHandler(async (event): Promise<VenueSummary> => {
+export default defineCachedEventHandler(async (event): Promise<VenueSummary> => {
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -26,4 +26,8 @@ export default defineEventHandler(async (event): Promise<VenueSummary> => {
   }
 
   return venue
+}, {
+  maxAge: 60 * 30,
+  swr: true,
+  getKey: event => `venue:${getRouterParam(event, 'id') || ''}`
 })

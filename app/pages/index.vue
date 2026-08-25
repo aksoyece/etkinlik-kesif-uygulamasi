@@ -16,7 +16,10 @@ const {
 
 useSeoMeta({
   title: 'Etkinlik Keşif',
-  description: 'Yaklaşan konser, spor ve sanat etkinliklerini Ticketmaster üzerinden keşfedin.'
+  description: 'Yaklaşan konser, spor ve sanat etkinliklerini Ticketmaster üzerinden keşfedin.',
+  ogTitle: 'Admit One - Etkinlik Keşif',
+  ogDescription: 'Yaklaşan konser, spor ve sanat etkinliklerini bilet stub estetiğiyle keşfedin.',
+  twitterCard: 'summary_large_image'
 })
 </script>
 

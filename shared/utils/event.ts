@@ -237,12 +237,30 @@ export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetai
   }
 }
 
+export function uniqueGalleryImages(urls: string[]): string[] {
+  const seen = new Set<string>()
+  const images: string[] = []
+
+  for (const url of urls) {
+    const key = url.replace(/_(TABLET_LANDSCAPE_LARGE_16_9|RETINA_LANDSCAPE_16_9|RETINA_PORTRAIT_16_9|RETINA_PORTRAIT_3_2|TABLET_LANDSCAPE_16_9|TABLET_LANDSCAPE_3_2|EVENT_DETAIL_PAGE_16_9|RECOMENDATION_16_9|SOURCE|CUSTOM)\.(?:jpe?g|png|webp)$/i, '')
+    if (seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    images.push(url)
+  }
+
+  return images
+}
+
 export function toFavoriteEvent(event: EventSummary): FavoriteEvent {
   return {
     id: event.id,
     name: event.name,
     image: event.image,
     dateLabel: event.dateLabel,
+    localDate: event.localDate,
+    localTime: event.localTime,
     city: event.city,
     venue: event.venue,
     category: event.category,

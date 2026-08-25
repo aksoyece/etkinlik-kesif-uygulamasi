@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { EventSummary } from '#shared/types/event'
+import type { EventSummary, FavoriteEvent } from '#shared/types/event'
 import { toFavoriteEvent } from '#shared/utils/event'
 
 const props = defineProps<{
-  event: EventSummary
+  event: EventSummary | FavoriteEvent
 }>()
 
 const favorites = useFavoritesStore()
@@ -32,7 +32,7 @@ const categoryLabel = computed(() => {
 
 // 3 & 5. Türkçe Tür Çevirisi ve Undefined Temizliği
 const genreLabel = computed(() => {
-  const raw = props.event.genre
+  const raw = 'genre' in props.event ? props.event.genre : undefined
   if (!raw || raw.toUpperCase() === 'UNDEFINED') {
     return 'Genel'
   }
