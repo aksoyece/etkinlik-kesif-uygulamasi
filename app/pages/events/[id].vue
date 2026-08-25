@@ -176,6 +176,7 @@ const barcodeStyle = computed(() => {
                 :src="event.image || event.images[0] || '/placeholder-event.svg'"
                 :alt="event.name"
                 class="h-full w-full object-cover"
+                decoding="async"
               >
               <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <span

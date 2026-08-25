@@ -15,6 +15,22 @@ import type {
 
 export const FAVORITES_STORAGE_KEY = 'etkinlik-favoriler'
 
+const TICKETMASTER_IMAGE_SIZES = [
+  'TABLET_LANDSCAPE_LARGE_16_9',
+  'RETINA_LANDSCAPE_16_9',
+  'RETINA_PORTRAIT_16_9',
+  'RETINA_PORTRAIT_3_2',
+  'TABLET_LANDSCAPE_16_9',
+  'TABLET_LANDSCAPE_3_2',
+  'EVENT_DETAIL_PAGE_16_9',
+  'RECOMENDATION_16_9',
+  'RECOMMENDATION_16_9',
+  'ARTIST_PAGE_3_2',
+  'SOURCE',
+  'CUSTOM',
+  'BLOCK'
+]
+
 export function toHttps(url?: string): string | undefined {
   if (!url) {
     return undefined
@@ -23,32 +39,29 @@ export function toHttps(url?: string): string | undefined {
   return url.replace(/^http:/, 'https:')
 }
 
-function ticketmasterImageScore(image: TicketmasterImage): number {
+export function toHighResTicketmasterUrl(url?: string): string | undefined {
+  const secure = toHttps(url)
+  if (!secure) {
+    return undefined
+  }
+
+  if (!/ticketm\.net/i.test(secure)) {
+    return secure
+  }
+
+  const pattern = new RegExp(`(_|/)(${TICKETMASTER_IMAGE_SIZES.join('|')})(\\.(?:jpe?g|png|webp))$`, 'i')
+  return secure.replace(pattern, '$1TABLET_LANDSCAPE_LARGE_16_9$3')
+}
+
+function isLandscapeCover(image: TicketmasterImage): boolean {
   const url = image.url || ''
-  let score = 0
+  return image.ratio === '16_9' || url.includes('16_9') || url.includes('LANDSCAPE')
+}
 
-  // Ticketmaster.com etkinlik kapakları fallback placeholder kullanmaz
-  if (image.fallback) {
-    score -= 100_000
-  }
-
-  // Liste ve detay sayfalarında 16:9 landscape kapak kullanılır
-  if (image.ratio === '16_9' || url.includes('16_9')) {
-    score += 50_000
-  } else if (image.ratio === '3_2' || url.includes('3_2')) {
-    score += 20_000
-  } else if (image.ratio === '4_3' || url.includes('4_3')) {
-    score += 5_000
-  }
-
-  // Ticketmaster'ın kendi named varyantları (sitede görünen kapak bunlardan gelir)
-  if (url.includes('RETINA_LANDSCAPE_16_9')) score += 8_000
-  else if (url.includes('TABLET_LANDSCAPE_LARGE_16_9')) score += 7_000
-  else if (url.includes('TABLET_LANDSCAPE_16_9')) score += 6_000
-  else if (url.includes('SOURCE')) score += 1_000
-
-  score += image.width ?? 0
-  return score
+function imageArea(image: TicketmasterImage): number {
+  const width = image.width ?? 0
+  const height = image.height ?? width
+  return width * height
 }
 
 export function pickEventImage(images?: TicketmasterImage[]): string | undefined {
@@ -56,8 +69,25 @@ export function pickEventImage(images?: TicketmasterImage[]): string | undefined
     return undefined
   }
 
-  const ranked = [...images].sort((a, b) => ticketmasterImageScore(b) - ticketmasterImageScore(a))
-  return toHttps(ranked[0]?.url)
+  const usable = images.filter(image => image.url)
+  const nonFallback = usable.filter(image => !image.fallback)
+  let pool = nonFallback.length ? nonFallback : usable
+
+  const sharp = pool.filter(image => (image.width ?? 0) >= 1024)
+  if (sharp.length) {
+    pool = sharp
+  }
+
+  const ranked = [...pool].sort((a, b) => {
+    const coverScore = Number(isLandscapeCover(b)) - Number(isLandscapeCover(a))
+    if (coverScore !== 0) {
+      return coverScore
+    }
+
+    return imageArea(b) - imageArea(a)
+  })
+
+  return toHighResTicketmasterUrl(ranked[0]?.url)
 }
 
 export function formatEventDate(dates?: TicketmasterDates): string {
@@ -189,7 +219,7 @@ export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetai
   const summary = mapTicketmasterEvent(event)
   const cover = summary.image
   const images = [...new Set(
-    [cover, ...(event.images ?? []).map(image => toHttps(image.url))]
+    [cover, ...(event.images ?? []).map(image => toHighResTicketmasterUrl(image.url))]
       .filter((url): url is string => Boolean(url))
   )]
 

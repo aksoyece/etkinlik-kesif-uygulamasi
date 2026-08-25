@@ -140,6 +140,7 @@ function toggleFavorite() {
         :alt="event.name"
         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         loading="lazy"
+        decoding="async"
       >
       <!-- 3. GÖRSELLER: Görsel üstüne alttan yukarı doğru siyahtan şeffafa hafif gradient overlay -->
       <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />

@@ -7,6 +7,7 @@ import {
   toFavoriteEvent,
   toggleFavoriteEvent,
   toHttps,
+  toHighResTicketmasterUrl,
   toTicketmasterDateTime
 } from '../shared/utils/event'
 import type { TicketmasterEvent } from '../app/types/event'
@@ -57,6 +58,20 @@ describe('etkinlik yardımcıları', () => {
       { url: 'http://cdn.example/fallback.jpg', ratio: '16_9', width: 2048, height: 1152, fallback: true }
     ]
     expect(pickEventImage(images)).toBe('https://cdn.example/RETINA_LANDSCAPE_16_9.jpg')
+  })
+
+  it('küçük 16:9 yerine yüksek çözünürlüklü görseli seçer', () => {
+    const images = [
+      { url: 'https://s1.ticketm.net/dam/a/abc/tiny_RECOMENDATION_16_9.jpg', ratio: '16_9', width: 305, height: 171, fallback: false },
+      { url: 'https://s1.ticketm.net/dam/a/abc/wide_TABLET_LANDSCAPE_3_2.jpg', ratio: '3_2', width: 2048, height: 1365, fallback: false }
+    ]
+    expect(pickEventImage(images)).toBe('https://s1.ticketm.net/dam/a/abc/wide_TABLET_LANDSCAPE_LARGE_16_9.jpg')
+  })
+
+  it('Ticketmaster CDN adresini büyük 16:9 varyanta yükseltir', () => {
+    expect(toHighResTicketmasterUrl(
+      'https://s1.ticketm.net/dam/a/abc/event_RECOMENDATION_16_9.jpg'
+    )).toBe('https://s1.ticketm.net/dam/a/abc/event_TABLET_LANDSCAPE_LARGE_16_9.jpg')
   })
 
   it('tarihi biçimler', () => {
