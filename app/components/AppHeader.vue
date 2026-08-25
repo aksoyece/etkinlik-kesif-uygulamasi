@@ -48,6 +48,9 @@ onMounted(() => {
           aria-label="Favoriler"
         />
       </UChip>
+      <ClientOnly>
+        <UColorModeButton />
+      </ClientOnly>
     </template>
 
     <template #body>
