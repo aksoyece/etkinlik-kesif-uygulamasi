@@ -15,17 +15,16 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: 'tr'
       },
-      title: 'Admit One - Etkinlik Keşif',
+      title: 'Evently - Etkinlik Keşif',
       meta: [
-        { name: 'description', content: 'Ticketmaster Discovery API ile yaklaşan konser, spor ve sanat etkinliklerini bilet stub estetiğiyle keşfedin.' },
-        // 11. Meta/OG görseli: Sosyal medyada paylaşım için Open Graph ve Twitter meta verileri
-        { property: 'og:title', content: 'Admit One - Etkinlik Keşif Uygulaması' },
-        { property: 'og:description', content: 'Yaklaşan konser, spor ve sanat etkinliklerini bilet stub estetiğiyle keşfedin.' },
+        { name: 'description', content: 'Evently ile yaklaşan konser, spor ve sanat etkinliklerini bilet stub estetiğiyle keşfedin.' },
+        { property: 'og:title', content: 'Evently - Etkinlik Keşif' },
+        { property: 'og:description', content: 'Yaklaşan konser, spor ve sanat etkinliklerini keşfedin. Admit One bilet konsepti.' },
         { property: 'og:image', content: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=630&fit=crop&q=80' },
         { property: 'og:type', content: 'website' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'Admit One - Etkinlik Keşif' },
-        { name: 'twitter:description', content: 'Yaklaşan konser, spor ve sanat etkinliklerini bilet stub estetiğiyle keşfedin.' },
+        { name: 'twitter:title', content: 'Evently - Etkinlik Keşif' },
+        { name: 'twitter:description', content: 'Yaklaşan konser, spor ve sanat etkinliklerini keşfedin.' },
         { name: 'twitter:image', content: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=630&fit=crop&q=80' }
       ],
       link: [

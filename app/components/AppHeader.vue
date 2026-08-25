@@ -17,13 +17,18 @@ onMounted(() => {
     <template #left>
       <NuxtLink
         to="/"
-        class="flex items-center gap-2 font-semibold text-highlighted"
+        class="flex items-center gap-2.5 min-w-0"
       >
         <UIcon
           name="i-lucide-ticket"
-          class="size-6 text-primary"
+          class="size-6 text-primary flex-none"
         />
-        <span class="font-ticket hidden text-sm sm:inline">Admit One</span>
+        <span class="flex flex-col leading-none gap-1">
+          <span class="text-lg font-bold tracking-tight text-highlighted">Evently</span>
+          <span class="font-ticket hidden sm:inline-flex w-fit rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 text-[8px] text-neutral-600 dark:text-neutral-300 tracking-widest">
+            ADMIT ONE • DISCOVER EVENTS
+          </span>
+        </span>
       </NuxtLink>
     </template>
 

@@ -66,7 +66,7 @@ export function buildIcsContent(event: EventSummary): string | undefined {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Admit One//Etkinlik Kesif//TR',
+    'PRODID:-//Evently//Etkinlik Kesif//TR',
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
     `UID:${event.id}@etkinlik-kesif`,

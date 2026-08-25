@@ -19,7 +19,7 @@ onMounted(() => {
     <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
       <div>
         <p class="font-ticket text-xs text-[#E8432E]">
-          Stub book
+          Evently
         </p>
         <h1 class="font-ticket text-3xl text-[#1A1A1A] dark:text-[#F7F5F0]">
           Favoriler

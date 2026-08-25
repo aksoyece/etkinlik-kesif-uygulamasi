@@ -15,10 +15,10 @@ const {
 } = useEventExplorer()
 
 useSeoMeta({
-  title: 'Etkinlik Keşif',
-  description: 'Yaklaşan konser, spor ve sanat etkinliklerini Ticketmaster üzerinden keşfedin.',
-  ogTitle: 'Admit One - Etkinlik Keşif',
-  ogDescription: 'Yaklaşan konser, spor ve sanat etkinliklerini bilet stub estetiğiyle keşfedin.',
+  title: 'Evently',
+  description: 'Evently ile yaklaşan konser, spor ve sanat etkinliklerini keşfedin.',
+  ogTitle: 'Evently',
+  ogDescription: 'Yaklaşan etkinlikleri keşfet. Admit One bilet konsepti.',
   twitterCard: 'summary_large_image'
 })
 </script>
@@ -28,12 +28,14 @@ useSeoMeta({
     <!-- 4. SPACING: Hero section başlık ve açıklama arası boşluk artırıldı (space-y-6 yapıldı) -->
     <section class="mb-12 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
       <div class="space-y-6">
-        <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500">
-          Discovery API • Etkinlik Keşif
-        </p>
-        <h1 class="font-ticket text-4xl leading-tight text-[#1A1A1A] sm:text-5xl dark:text-[#F7F5F0]">
-          Yaklaşan etkinlikleri keşfet
-        </h1>
+        <div class="space-y-3">
+          <span class="font-ticket inline-flex w-fit rounded-full bg-neutral-200 dark:bg-neutral-800 px-2.5 py-1 text-[9px] text-neutral-600 dark:text-neutral-300 tracking-widest">
+            ADMIT ONE • DISCOVER EVENTS
+          </span>
+          <h1 class="font-ticket text-4xl leading-tight text-[#1A1A1A] sm:text-5xl dark:text-[#F7F5F0]">
+            Yaklaşan etkinlikleri keşfet
+          </h1>
+        </div>
         <!-- 4. SPACING: Açıklama paragrafının font-size'ı text-lg'den text-base'e küçültüldü -->
         <p class="max-w-2xl text-base text-neutral-500 dark:text-neutral-400 leading-relaxed">
           Konser, spor, tiyatro ve daha fazlasını arayın, şehre ve tarihe göre filtreleyin, favorilerinize kaydedin.
@@ -66,10 +68,10 @@ useSeoMeta({
       <div class="ticket-stub p-6">
         <div class="flex-1 space-y-3 p-2">
           <p class="font-ticket text-[10px] text-neutral-400 dark:text-neutral-500">
-            Keşif Kartı
+            ADMIT ONE
           </p>
           <p class="font-ticket text-sm font-semibold">
-            Arama • Filtre • Favori
+            Evently Pass
           </p>
           <div class="ticket-barcode animate-pulse" />
         </div>

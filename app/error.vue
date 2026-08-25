@@ -39,7 +39,7 @@ function handleClearError() {
       <div class="p-8 flex flex-col items-center text-center gap-6">
         <div class="space-y-2">
           <p class="font-ticket text-xs text-[#E8432E] tracking-widest">
-            ERROR CODE: {{ error.statusCode }}
+            EVENTLY • ERROR {{ error.statusCode }}
           </p>
           <h1 class="font-ticket text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-white leading-tight">
             {{ is404 ? 'GEÇERSİZ BİLET' : 'SİSTEM HATASI' }}

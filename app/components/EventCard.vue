@@ -232,6 +232,9 @@ function toggleFavorite() {
       </dl>
 
       <!-- Dinamik Barkod -->
+      <p class="font-ticket text-[9px] tracking-widest text-neutral-400 dark:text-neutral-500">
+        ADMIT ONE
+      </p>
       <div
         class="ticket-barcode mt-auto pt-2"
         :style="barcodeStyle"

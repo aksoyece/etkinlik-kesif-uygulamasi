@@ -1,6 +1,8 @@
-# Etkinlik Keşif Uygulaması
+# Evently
 
 Ticketmaster Discovery API 2.0 üzerinden gerçek etkinlik verisi çeken, Nuxt 4 + Nuxt UI ile yazılmış etkinlik keşif uygulaması.
+
+Marka: **Evently**. Bilet konsepti: **Admit One**.
 
 ## Özellikler
 
