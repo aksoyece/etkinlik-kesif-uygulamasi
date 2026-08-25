@@ -1,0 +1,79 @@
+# Etkinlik Keşif Uygulaması
+
+Ticketmaster Discovery API 2.0 üzerinden gerçek etkinlik verisi çeken, Nuxt 4 + Nuxt UI ile yazılmış etkinlik keşif uygulaması.
+
+## Özellikler
+
+- Yaklaşan etkinlikleri listeleme
+- Kartlarda ad, görsel, tarih, şehir, mekan ve kategori
+- Arama, şehir / kategori / tarih filtreleri, sıralama ve sayfalama
+- Etkinlik detayı: etkinlik, sanatçı ve mekan bilgisi
+- Pinia + Local Storage ile favoriler
+- Yükleniyor, hata ve boş durumları
+- Koyu / açık tema
+- TypeScript ve Zod doğrulaması
+- Temel birim testleri
+
+## Kurulum
+
+```bash
+npm install
+cp .env.example .env
+```
+
+`.env` içine Ticketmaster API anahtarınızı yazın:
+
+```
+NUXT_TICKETMASTER_API_KEY=your_key
+```
+
+Anahtar: [Ticketmaster Developer Portal](https://developer.ticketmaster.com/)
+
+API dokümantasyonu: [Discovery API v2](https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/)
+
+Geliştirme sunucusu:
+
+```bash
+npm run dev
+```
+
+Adres: `http://localhost:3000`
+
+## Komutlar
+
+```bash
+npm run dev
+npm run build
+npm run test
+npm run lint
+npm run typecheck
+```
+
+## Proje yapısı
+
+```
+app/
+  pages/
+    index.vue
+    events/index.vue
+    events/[id].vue
+    favorites.vue
+  components/
+    EventCard.vue
+    EventList.vue
+    EventFilters.vue
+    EventSearch.vue
+    AppHeader.vue
+  composables/
+    useEvents.ts
+    useVenues.ts
+    useClassifications.ts
+  stores/
+    favorites.ts
+  types/
+    event.ts
+server/api/
+shared/utils/
+```
+
+Nuxt 4 kaynak dizinini `app/` altında tutar.

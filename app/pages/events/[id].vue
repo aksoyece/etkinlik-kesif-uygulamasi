@@ -1,0 +1,365 @@
+<script setup lang="ts">
+import { mapsUrl, toFavoriteEvent } from '#shared/utils/event'
+
+const route = useRoute()
+const toast = useToast()
+const favorites = useFavoritesStore()
+
+const id = computed(() => String(route.params.id || ''))
+const { event, pending, error, refresh } = useEvent(id)
+const { venue } = useVenue(computed(() => event.value?.venueId))
+
+const favorited = computed(() => event.value ? favorites.isFavorite(event.value.id) : false)
+const venueInfo = computed(() => venue.value || event.value?.venueDetail)
+const mapLink = computed(() => mapsUrl(venueInfo.value))
+
+const errorMessage = computed(() => {
+  const value = error.value as { statusMessage?: string, message?: string } | null
+  return value?.statusMessage || value?.message || 'Etkinlik detayı alınamadı.'
+})
+
+useSeoMeta({
+  title: () => event.value?.name || 'Etkinlik detayı',
+  description: () => event.value?.info || event.value?.name || 'Etkinlik detayı'
+})
+
+function toggleFavorite() {
+  if (!event.value) {
+    return
+  }
+
+  const added = favorites.toggle(toFavoriteEvent(event.value))
+  toast.add({
+    title: added ? 'Favorilere eklendi' : 'Favorilerden çıkarıldı',
+    description: event.value.name,
+    color: added ? 'success' : 'neutral'
+  })
+}
+
+const statusLabel: Record<string, string> = {
+  onSale: 'Satışta',
+  offSale: 'Satış dışı',
+  cancelled: 'İptal edildi',
+  postponed: 'Ertelendi',
+  rescheduled: 'Yeniden planlandı'
+}
+
+const categoryBadgeClass = computed(() => {
+  if (!event.value) return 'bg-neutral-600 text-white'
+  const cat = (event.value.category || '').toUpperCase()
+  if (cat.includes('MUSIC')) return 'bg-amber-500 text-white' // Konser: Turuncu
+  if (cat.includes('SPORTS')) return 'bg-blue-600 text-white' // Spor: Mavi
+  if (cat.includes('ARTS') || cat.includes('THEATRE')) return 'bg-purple-600 text-white' // Tiyatro/Sanat: Mor
+  if (cat.includes('FAMILY')) return 'bg-emerald-600 text-white' // Aile: Yeşil
+  if (cat.includes('FILM')) return 'bg-[#E8432E] text-white' // Film: Kırmızı (En öne çıkan kategori)
+  return 'bg-neutral-500 text-white' // Miscellaneous / Diğer: Gri
+})
+</script>
+
+<template>
+  <UContainer class="py-8 sm:py-12">
+    <!-- Yükleme Durumu (Bilet Temalı) -->
+    <div
+      v-if="pending"
+      class="space-y-6"
+    >
+      <div class="ticket-stub flex flex-col md:flex-row h-96 opacity-75 animate-pulse">
+        <div class="w-full md:w-1/2 bg-neutral-200 dark:bg-neutral-800" />
+        <div class="ticket-tear-horizontal block md:hidden" />
+        <div class="ticket-tear-vertical hidden md:block" />
+        <div class="flex-1 p-8 space-y-4">
+          <USkeleton class="h-6 w-1/4 bg-neutral-200 dark:bg-neutral-800" />
+          <USkeleton class="h-10 w-3/4 bg-neutral-200 dark:bg-neutral-800" />
+          <USkeleton class="h-6 w-1/2 bg-neutral-200 dark:bg-neutral-800" />
+          <div class="space-y-2 pt-4">
+            <USkeleton class="h-4 w-full bg-neutral-200 dark:bg-neutral-800" />
+            <USkeleton class="h-4 w-full bg-neutral-200 dark:bg-neutral-800" />
+            <USkeleton class="h-4 w-2/3 bg-neutral-200 dark:bg-neutral-800" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hata Durumu (Bilet Temalı) -->
+    <div
+      v-else-if="error"
+      class="max-w-2xl mx-auto ticket-stub flex flex-col items-center text-center p-8 gap-4 border-red-500/30 dark:border-red-500/20"
+    >
+      <div class="rounded-full bg-red-50 dark:bg-red-950/30 p-3 text-red-500">
+        <UIcon name="i-lucide-triangle-alert" class="size-8" />
+      </div>
+      <h3 class="font-ticket text-xl font-bold text-neutral-900 dark:text-white">Etkinlik Yüklenemedi</h3>
+      <p class="text-sm text-neutral-500 dark:text-neutral-400 max-w-md">
+        {{ errorMessage }}
+      </p>
+      <div class="ticket-barcode max-w-xs my-2 text-red-500/30" />
+      <UButton
+        color="primary"
+        variant="solid"
+        icon="i-lucide-refresh-cw"
+        @click="refresh()"
+      >
+        Tekrar Dene
+      </UButton>
+    </div>
+
+    <article
+      v-else-if="event"
+      class="space-y-8"
+    >
+      <UButton
+        to="/events"
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-arrow-left"
+        class="hover:translate-x-[-4px] transition-transform duration-200"
+      >
+        Etkinliklere dön
+      </UButton>
+
+      <div class="grid gap-8 lg:grid-cols-[1.4fr_0.8fr]">
+        <div class="space-y-8">
+          <!-- Ana Bilet Görseli ve Başlık Alanı -->
+          <div class="ticket-stub flex-col">
+            <div class="relative h-80 sm:h-96 w-full overflow-hidden">
+              <img
+                :src="event.images[0] || event.image || '/placeholder-event.svg'"
+                :alt="event.name"
+                class="h-full w-full object-cover"
+              >
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <span
+                class="font-ticket absolute bottom-4 left-4 rounded px-2.5 py-1 text-xs font-bold shadow-md"
+                :class="categoryBadgeClass"
+              >
+                {{ event.category || 'Etkinlik' }}
+              </span>
+            </div>
+
+            <div class="ticket-tear-horizontal" />
+
+            <div class="p-6 sm:p-8 space-y-6">
+              <div class="flex flex-wrap items-center gap-2">
+                <UBadge
+                  v-if="event.genre"
+                  color="neutral"
+                  variant="subtle"
+                  class="font-ticket"
+                >
+                  {{ event.genre }}
+                </UBadge>
+                <UBadge
+                  v-if="event.status"
+                  :color="event.status === 'cancelled' ? 'error' : 'success'"
+                  variant="subtle"
+                  class="font-ticket"
+                >
+                  {{ statusLabel[event.status] || event.status }}
+                </UBadge>
+              </div>
+
+              <h1 class="font-ticket text-3xl font-extrabold leading-tight sm:text-4xl text-neutral-900 dark:text-white">
+                {{ event.name }}
+              </h1>
+
+              <div class="font-ticket flex flex-wrap gap-x-6 gap-y-3 text-xs text-neutral-500 dark:text-neutral-400">
+                <span class="flex items-center gap-2">
+                  <UIcon name="i-lucide-calendar" class="size-4 text-primary" />
+                  {{ event.dateLabel }}
+                </span>
+                <span
+                  v-if="event.city"
+                  class="flex items-center gap-2"
+                >
+                  <UIcon name="i-lucide-map-pin" class="size-4 text-primary" />
+                  {{ event.city }}
+                </span>
+                <span
+                  v-if="event.priceLabel"
+                  class="flex items-center gap-2"
+                >
+                  <UIcon name="i-lucide-banknote" class="size-4 text-primary" />
+                  {{ event.priceLabel }}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap gap-3 pt-2">
+                <UButton
+                  :color="favorited ? 'primary' : 'neutral'"
+                  :variant="favorited ? 'solid' : 'outline'"
+                  icon="i-lucide-heart"
+                  size="lg"
+                  class="transition-transform duration-200 hover:scale-105 active:scale-95"
+                  @click="toggleFavorite"
+                >
+                  {{ favorited ? 'Favorilerde' : 'Favorilere ekle' }}
+                </UButton>
+                <UButton
+                  v-if="event.ticketUrl"
+                  :to="event.ticketUrl"
+                  target="_blank"
+                  size="lg"
+                  trailing-icon="i-lucide-external-link"
+                  class="transition-transform duration-200 hover:scale-105 active:scale-95"
+                >
+                  Bilet al
+                </UButton>
+              </div>
+            </div>
+          </div>
+
+          <!-- Etkinlik Açıklaması -->
+          <section
+            v-if="event.info"
+            class="ticket-stub flex-col p-6 sm:p-8 gap-4"
+          >
+            <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white border-b border-dashed border-neutral-200 dark:border-neutral-800 pb-2">
+              Etkinlik bilgisi
+            </h2>
+            <p class="whitespace-pre-line text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+              {{ event.info }}
+            </p>
+          </section>
+
+          <!-- Lütfen Dikkat Uyarısı -->
+          <UAlert
+            v-if="event.pleaseNote"
+            color="warning"
+            icon="i-lucide-info"
+            title="Lütfen dikkat"
+            :description="event.pleaseNote"
+            class="border-amber-500/30 dark:border-amber-500/20"
+          />
+
+          <!-- Sanatçılar / Attractions -->
+          <section
+            v-if="event.attractions.length"
+            class="space-y-4"
+          >
+            <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white">
+              Sanatçılar
+            </h2>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div
+                v-for="artist in event.attractions"
+                :key="artist.id || artist.name"
+                class="ticket-stub p-4 items-center gap-4 hover:border-primary-500/30 transition-all duration-300"
+              >
+                <UAvatar
+                  :src="artist.image"
+                  :alt="artist.name"
+                  size="xl"
+                  icon="i-lucide-user"
+                  class="ring-2 ring-primary-500/20"
+                />
+                <div class="flex-1 min-w-0">
+                  <p class="font-ticket text-sm font-bold text-neutral-900 dark:text-white truncate">
+                    {{ artist.name }}
+                  </p>
+                  <p
+                    v-if="artist.genre"
+                    class="font-ticket text-[10px] text-neutral-400 mt-0.5 truncate"
+                  >
+                    {{ artist.genre }}
+                  </p>
+                  <UButton
+                    v-if="artist.url"
+                    :to="artist.url"
+                    target="_blank"
+                    variant="link"
+                    size="xs"
+                    trailing-icon="i-lucide-arrow-up-right"
+                    class="px-0 mt-1"
+                  >
+                    Profil
+                  </UButton>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Sağ Yan Panel (Mekan ve Oturma Planı) -->
+        <aside class="space-y-6">
+          <!-- Mekan Bilgisi (Bilet Temalı) -->
+          <div
+            v-if="venueInfo"
+            class="ticket-stub flex-col p-6 gap-4"
+          >
+            <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white border-b border-dashed border-neutral-200 dark:border-neutral-800 pb-2">
+              Mekan
+            </h2>
+
+            <div class="space-y-3">
+              <p class="font-ticket text-base font-bold text-neutral-900 dark:text-white">
+                {{ venueInfo.name }}
+              </p>
+              
+              <div class="space-y-2 text-sm text-neutral-600 dark:text-neutral-300">
+                <p v-if="venueInfo.address" class="flex items-start gap-2">
+                  <UIcon name="i-lucide-map-pin" class="size-4 mt-0.5 text-primary flex-none" />
+                  <span>{{ venueInfo.address }}</span>
+                </p>
+                <p v-if="venueInfo.boxOffice" class="flex items-start gap-2">
+                  <UIcon name="i-lucide-ticket" class="size-4 mt-0.5 text-primary flex-none" />
+                  <span>Gişe: {{ venueInfo.boxOffice }}</span>
+                </p>
+                <p v-if="venueInfo.parkingDetail" class="flex items-start gap-2">
+                  <UIcon name="i-lucide-car" class="size-4 mt-0.5 text-primary flex-none" />
+                  <span>Otopark: {{ venueInfo.parkingDetail }}</span>
+                </p>
+                <p v-if="venueInfo.generalRule" class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500 italic">
+                  <UIcon name="i-lucide-info" class="size-4 mt-0.5 text-neutral-400 flex-none" />
+                  <span>{{ venueInfo.generalRule }}</span>
+                </p>
+              </div>
+
+              <div class="flex flex-wrap gap-2 pt-2">
+                <UButton
+                  v-if="mapLink"
+                  :to="mapLink"
+                  target="_blank"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-map"
+                  size="sm"
+                  class="w-full justify-center"
+                >
+                  Haritada aç
+                </UButton>
+                <UButton
+                  v-if="venueInfo.url"
+                  :to="venueInfo.url"
+                  target="_blank"
+                  variant="link"
+                  size="xs"
+                  trailing-icon="i-lucide-arrow-up-right"
+                  class="mx-auto"
+                >
+                  Mekan sayfası
+                </UButton>
+              </div>
+            </div>
+          </div>
+
+          <!-- Oturma Planı (Bilet Temalı) -->
+          <div
+            v-if="event.seatmap"
+            class="ticket-stub flex-col p-6 gap-4"
+          >
+            <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white border-b border-dashed border-neutral-200 dark:border-neutral-800 pb-2">
+              Oturma planı
+            </h2>
+            <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800">
+              <img
+                :src="event.seatmap"
+                alt="Oturma planı"
+                class="w-full hover:scale-105 transition-transform duration-300"
+              >
+            </div>
+          </div>
+        </aside>
+      </div>
+    </article>
+  </UContainer>
+</template>

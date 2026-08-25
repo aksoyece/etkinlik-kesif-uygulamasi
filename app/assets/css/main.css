@@ -1,0 +1,296 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --color-ticket-50: #FDF2F0;
+  --color-ticket-100: #FADDD8;
+  --color-ticket-200: #F5B8AF;
+  --color-ticket-300: #EE8B7D;
+  --color-ticket-400: #E85F4C;
+  --color-ticket-500: #E8432E;
+  --color-ticket-600: #C73522;
+  --color-ticket-700: #A52B1C;
+  --color-ticket-800: #7A2116;
+  --color-ticket-900: #4F160F;
+  --color-ticket-950: #2A0C08;
+}
+
+:root {
+  --ticket-paper: #F7F5F0;
+  --ticket-ink: #1A1A1A;
+  --ticket-perf: #D4D0C8;
+  --ticket-red: #E8432E;
+}
+
+body {
+  background:
+    radial-gradient(circle at 1px 1px, rgb(26 26 26 / 0.05) 1px, transparent 0) 0 0 / 18px 18px,
+    var(--ticket-paper);
+  color: var(--ticket-ink);
+}
+
+/* 1. RENK PALETİ: Koyu mod arka planı saf siyah veya #141414 yerine #151515 yapıldı */
+.dark body {
+  background:
+    radial-gradient(circle at 1px 1px, rgb(247 245 240 / 0.05) 1px, transparent 0) 0 0 / 18px 18px,
+    #151515;
+}
+
+.font-ticket {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Bilet Kartı Temel Stilleri */
+.ticket-stub {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  background: var(--ticket-paper);
+  color: var(--ticket-ink);
+  box-shadow: 0 4px 20px rgb(26 26 26 / 0.04);
+  border: 1px solid var(--ticket-perf);
+  border-radius: 8px;
+  /* 5. MICRO-INTERACTIONS: Kart hover geçiş süresi 200ms ease yapıldı */
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.dark .ticket-stub {
+  background: #1C1C1C;
+  color: #F7F5F0;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.15);
+  border: 1px solid #2D2D2D;
+}
+
+/* 5. MICRO-INTERACTIONS: Kart hover'ında hafif scale (1.02) ve border renginin kırmızıya dönmesi */
+.ticket-stub:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 30px rgb(26 26 26 / 0.1);
+  border-color: var(--ticket-red);
+}
+
+.dark .ticket-stub:hover {
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.3);
+  border-color: #E8432E;
+}
+
+/* Sol ve Sağ Kenar Perforasyon Tırtıkları (Koyu modda arka plan rengi #151515 ile eşitlendi) */
+@media (min-width: 640px) {
+  .ticket-stub::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -5px;
+    width: 10px;
+    z-index: 5;
+    background-image: radial-gradient(circle, var(--ticket-paper) 4px, transparent 5px);
+    background-size: 10px 14px;
+    background-repeat: repeat-y;
+  }
+
+  .ticket-stub::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: -5px;
+    width: 10px;
+    z-index: 5;
+    background-image: radial-gradient(circle, var(--ticket-paper) 4px, transparent 5px);
+    background-size: 10px 14px;
+    background-repeat: repeat-y;
+  }
+
+  .dark .ticket-stub::before {
+    background-image: radial-gradient(circle, #151515 4px, transparent 5px);
+  }
+
+  .dark .ticket-stub::after {
+    background-image: radial-gradient(circle, #151515 4px, transparent 5px);
+  }
+}
+
+/* Üst ve Alt Kenar Perforasyon Tırtıkları (Koyu modda arka plan rengi #151515 ile eşitlendi) */
+@media (max-width: 639px) {
+  .ticket-stub::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -5px;
+    height: 10px;
+    z-index: 5;
+    background-image: radial-gradient(circle, var(--ticket-paper) 4px, transparent 5px);
+    background-size: 14px 10px;
+    background-repeat: repeat-x;
+  }
+
+  .ticket-stub::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -5px;
+    height: 10px;
+    z-index: 5;
+    background-image: radial-gradient(circle, var(--ticket-paper) 4px, transparent 5px);
+    background-size: 14px 10px;
+    background-repeat: repeat-x;
+  }
+
+  .dark .ticket-stub::before {
+    background-image: radial-gradient(circle, #151515 4px, transparent 5px);
+  }
+
+  .dark .ticket-stub::after {
+    background-image: radial-gradient(circle, #151515 4px, transparent 5px);
+  }
+}
+
+/* Dikey Yırtılma Çizgisi */
+.ticket-tear-vertical {
+  position: relative;
+  width: 18px;
+  flex: none;
+  /* 1. RENK PALETİ: Perforasyon çizgilerinin opacity'si düşürüldü */
+  opacity: 0.65;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 6px,
+    var(--ticket-perf) 6px 8px
+  );
+}
+
+.dark .ticket-tear-vertical {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 6px,
+    #3D3D3D 6px 8px
+  );
+}
+
+.ticket-tear-vertical::before,
+.ticket-tear-vertical::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  z-index: 6;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--ticket-paper);
+  border: 1px solid var(--ticket-perf);
+}
+
+.dark .ticket-tear-vertical::before,
+.dark .ticket-tear-vertical::after {
+  background: #151515;
+  border: 1px solid #2D2D2D;
+}
+
+.ticket-tear-vertical::before {
+  top: -9px;
+}
+
+.ticket-tear-vertical::after {
+  bottom: -9px;
+}
+
+/* Yatay Yırtılma Çizgisi */
+.ticket-tear-horizontal {
+  position: relative;
+  height: 18px;
+  width: 100%;
+  flex: none;
+  /* 1. RENK PALETİ: Perforasyon çizgilerinin opacity'si düşürüldü */
+  opacity: 0.65;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0 6px,
+    var(--ticket-perf) 6px 8px
+  );
+}
+
+.dark .ticket-tear-horizontal {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0 6px,
+    #3D3D3D 6px 8px
+  );
+}
+
+.ticket-tear-horizontal::before,
+.ticket-tear-horizontal::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  z-index: 6;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--ticket-paper);
+  border: 1px solid var(--ticket-perf);
+}
+
+.dark .ticket-tear-horizontal::before,
+.dark .ticket-tear-horizontal::after {
+  background: #151515;
+  border: 1px solid #2D2D2D;
+}
+
+.ticket-tear-horizontal::before {
+  left: -9px;
+}
+
+.ticket-tear-horizontal::after {
+  right: -9px;
+}
+
+/* Barkod */
+.ticket-barcode {
+  height: 44px;
+  width: 100%;
+  /* 1. RENK PALETİ: Barkod opacity'si %60-70 arasına (%65) düşürüldü */
+  opacity: 0.65;
+  transition: opacity 0.2s ease;
+}
+
+.ticket-stub:hover .ticket-barcode {
+  opacity: 0.9;
+}
+
+/* Kesikli Bilgi Çizgisi */
+.ticket-line {
+  border-bottom: 1px dashed var(--ticket-perf);
+  min-height: 1.4rem;
+  transition: border-color 0.2s ease;
+}
+
+.dark .ticket-line {
+  border-bottom-color: #2D2D2D;
+}
+
+.ticket-stub:hover .ticket-line {
+  border-bottom-color: var(--ticket-red);
+}
+
+.dark .ticket-stub:hover .ticket-line {
+  border-bottom-color: #E8432E;
+}
+
+/* 5. MICRO-INTERACTIONS: Favori kalp ikonu için scale bounce animasyonu */
+@keyframes heart-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.35); }
+  60% { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+
+.animate-heart-bounce {
+  animation: heart-bounce 350ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
