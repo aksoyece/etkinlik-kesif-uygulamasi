@@ -14,39 +14,54 @@ const favorited = computed(() => favorites.isFavorite(props.event.id))
 // 5. MICRO-INTERACTIONS: Kalp ikonu tıklandığında animasyonu tetiklemek için ref
 const isHeartAnimating = ref(false)
 
-// 1. SEAT ve GENRE düzeltmeleri
-const seat = computed(() => {
-  const digits = props.event.id.replace(/[^0-9]/g, '')
-  if (!digits) {
-    return 'GENEL'
+// 3 & 5. Türkçe Kategori Çevirisi ve Undefined Temizliği
+const categoryLabel = computed(() => {
+  const cat = props.event.category
+  if (!cat || cat.toUpperCase() === 'UNDEFINED') {
+    return 'Genel'
   }
-  return `SIRA ${digits.slice(-2)} / NO ${digits.slice(-4, -2) || '12'}`
+  const upper = cat.toUpperCase()
+  if (upper.includes('MUSIC')) return 'Müzik'
+  if (upper.includes('SPORTS')) return 'Spor'
+  if (upper.includes('ARTS') || upper.includes('THEATRE')) return 'Sanat & Tiyatro'
+  if (upper.includes('FAMILY')) return 'Aile'
+  if (upper.includes('FILM')) return 'Film'
+  if (upper.includes('MISCELLANEOUS')) return 'Diğer'
+  return cat
 })
 
+// 3 & 5. Türkçe Tür Çevirisi ve Undefined Temizliği
 const genreLabel = computed(() => {
   const raw = props.event.genre
   if (!raw || raw.toUpperCase() === 'UNDEFINED') {
     return 'Genel'
   }
+  const upper = raw.toUpperCase()
+  if (upper === 'ROCK') return 'Rock'
+  if (upper === 'POP') return 'Pop'
+  if (upper === 'JAZZ') return 'Caz'
+  if (upper === 'CLASSICAL') return 'Klasik Müzik'
+  if (upper === 'METAL') return 'Metal'
+  if (upper === 'HIP-HOP' || upper === 'HIP HOP') return 'Hip-Hop'
+  if (upper === 'RAP') return 'Rap'
+  if (upper === 'ALTERNATIVE' || upper === 'ALTERNATIVE ROCK') return 'Alternatif'
+  if (upper === 'COMEDY') return 'Komedi'
+  if (upper === 'THEATRE' || upper === 'DRAMA') return 'Tiyatro'
+  if (upper === 'DANCE' || upper === 'ELECTRONIC') return 'Elektronik'
+  if (upper === 'FOLK') return 'Halk Müziği'
+  if (upper === 'BLUES') return 'Blues'
+  if (upper === 'SOUL') return 'Soul'
+  if (upper === 'REGGAE') return 'Reggae'
+  if (upper === 'INDIE') return 'Bağımsız'
+  if (upper === 'FAMILY' || upper === 'CHILDREN') return 'Aile / Çocuk'
+  if (upper === 'OTHER' || upper === 'MISCELLANEOUS') return 'Diğer'
   return raw
 })
 
-// 2. GATE kısaltma kodları (MISCELLA -> MISC, vb.)
-const gate = computed(() => {
-  const raw = (props.event.category || '').toUpperCase()
-  if (!raw || raw === 'UNDEFINED') {
-    return 'GEN'
-  }
-  if (raw.includes('MUSIC')) return 'MUS'
-  if (raw.includes('SPORTS')) return 'SPO'
-  if (raw.includes('ARTS') || raw.includes('THEATRE')) return 'ART'
-  if (raw.includes('FILM')) return 'FLM'
-  if (raw.includes('MISCELLANEOUS') || raw.includes('FAMILY')) return 'MSC'
-  return raw.slice(0, 3)
-})
-
 const when = computed(() => props.event.dateLabel || 'Tarih Açıklanacak')
-const where = computed(() => [props.event.venue, props.event.city].filter(Boolean).join(' / ') || 'Mekan Açıklanacak')
+const venueName = computed(() => props.event.venue || 'Mekan Açıklanacak')
+const cityName = computed(() => props.event.city || 'Şehir Açıklanacak')
+const price = computed(() => props.event.priceLabel || 'Fiyat bilgisi yok')
 
 // 1. RENK PALETİ: Kategori rozetleri renk kodlaması
 // Kırmızı accent (#E8432E) sadece FILM (en öne çıkan) kategorisinde kullanılır.
@@ -61,21 +76,29 @@ const categoryBadgeClass = computed(() => {
   return 'bg-neutral-500 text-white' // Miscellaneous / Diğer: Gri
 })
 
-// 4. Deterministic Barkod Deseni (Etkinlik ID'sine göre çizgi genişlikleri üretme)
+// 8. Barkod Deseni Çeşitliliği: Etkinlik ID'sine göre tamamen benzersiz ve gerçekçi barkod deseni üretir
 const barcodeStyle = computed(() => {
   const id = props.event.id || 'default'
-  let hash = 0
+
+  // Seeded LCG (Linear Congruential Generator)
+  let seed = 0
   for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash)
+    seed = id.charCodeAt(i) + ((seed << 5) - seed)
+  }
+
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296
+    return seed / 4294967296
   }
 
   const lines: string[] = []
   let currentPos = 0
 
-  for (let i = 0; i < 14; i++) {
-    const val = Math.abs((hash >> i) & 7)
-    const lineWidth = (val % 3) + 1
-    const spaceWidth = ((val >> 1) % 4) + 2
+  // 25 ila 35 adet çizgi oluşturarak gerçekçi bir barkod görünümü elde edilir
+  const numLines = 25 + Math.floor(random() * 10)
+  for (let i = 0; i < numLines; i++) {
+    const lineWidth = Math.floor(random() * 3) + 1 // 1-3px
+    const spaceWidth = Math.floor(random() * 4) + 1 // 1-4px
 
     currentPos += lineWidth
     lines.push(`currentColor ${currentPos - lineWidth}px ${currentPos}px`)
@@ -120,13 +143,13 @@ function toggleFavorite() {
       >
       <!-- 3. GÖRSELLER: Görsel üstüne alttan yukarı doğru siyahtan şeffafa hafif gradient overlay -->
       <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-      
-      <!-- Dinamik Renkli Kategori Rozeti -->
+
+      <!-- Dinamik Renkli Türkçe Kategori Rozeti -->
       <span
         class="font-ticket absolute bottom-3 left-3 rounded px-2 py-0.5 text-[9px] font-bold shadow-sm transition-colors duration-300"
         :class="categoryBadgeClass"
       >
-        {{ event.category || 'Etkinlik' }}
+        {{ categoryLabel }}
       </span>
     </NuxtLink>
 
@@ -161,29 +184,49 @@ function toggleFavorite() {
         </ClientOnly>
       </div>
 
-      <!-- 2. TİPOGRAFİ HİYERARŞİSİ: Label ve Değerlerin ayrımı netleştirildi -->
+      <!-- 2. TİPOGRAFİ HİYERARŞİSİ: Label ve Değerlerin ayrımı netleştirildi, İngilizce terimler Türkçeleştirildi -->
       <dl class="font-ticket grid grid-cols-2 gap-x-4 gap-y-3">
         <div>
           <!-- Label: text-xs, opacity 50-60%, letter-spacing artırılmış -->
-          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">Date</dt>
+          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">
+            Tarih
+          </dt>
           <!-- Değer: text-sm, font-weight 500-600, tam opak -->
-          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5">{{ when }}</dd>
+          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5">
+            {{ when }}
+          </dd>
         </div>
         <div>
-          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">Gate</dt>
-          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5">{{ gate }}</dd>
+          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">
+            Tür
+          </dt>
+          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5 truncate">
+            {{ genreLabel }}
+          </dd>
         </div>
         <div class="col-span-2">
-          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">Venue</dt>
-          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5 truncate">{{ where }}</dd>
+          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">
+            Mekan
+          </dt>
+          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5 truncate">
+            {{ venueName }}
+          </dd>
         </div>
         <div>
-          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">Seat</dt>
-          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5">{{ seat }}</dd>
+          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">
+            Şehir
+          </dt>
+          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5 truncate">
+            {{ cityName }}
+          </dd>
         </div>
         <div>
-          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">Genre</dt>
-          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5 truncate">{{ genreLabel }}</dd>
+          <dt class="text-xs font-bold tracking-widest text-neutral-500 dark:text-neutral-400 opacity-60 uppercase">
+            Fiyat
+          </dt>
+          <dd class="ticket-line text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5 truncate">
+            {{ price }}
+          </dd>
         </div>
       </dl>
 

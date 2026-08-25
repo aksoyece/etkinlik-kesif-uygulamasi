@@ -5,7 +5,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  submit: []
+  'submit': []
 }>()
 </script>
 

@@ -33,9 +33,9 @@ export async function ticketmasterFetch<T>(
   }
 
   try {
-    return await $fetch<T>(`${config.ticketmasterBaseUrl}${path}`, {
+    return await $fetch<unknown>(`${config.ticketmasterBaseUrl}${path}`, {
       query: params
-    })
+    }) as T
   } catch (error: unknown) {
     const fetchError = error as {
       statusCode?: number

@@ -36,12 +36,12 @@ export function useClassifications() {
 
 function translateCategory(name: string): string {
   const labels: Record<string, string> = {
-    Music: 'Müzik',
-    Sports: 'Spor',
+    'Music': 'Müzik',
+    'Sports': 'Spor',
     'Arts & Theatre': 'Sanat ve Tiyatro',
-    Film: 'Film',
-    Miscellaneous: 'Diğer',
-    Undefined: 'Diğer'
+    'Film': 'Film',
+    'Miscellaneous': 'Diğer',
+    'Undefined': 'Diğer'
   }
 
   return labels[name] || name

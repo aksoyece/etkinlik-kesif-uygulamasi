@@ -28,18 +28,17 @@ export function pickEventImage(images?: TicketmasterImage[]): string | undefined
     return undefined
   }
 
+  // 4. Görsel Çözünürlüğü: En yüksek çözünürlüğe (width * height) sahip görseli seçer
   const ranked = [...images].sort((a, b) => {
-    const fallbackScore = Number(a.fallback) - Number(b.fallback)
-    if (fallbackScore !== 0) {
-      return fallbackScore
-    }
+    const wA = a.width ?? 0
+    const hA = a.height ?? wA // height yoksa kare kabul ederek width kullanıyoruz
+    const wB = b.width ?? 0
+    const hB = b.height ?? wB // height yoksa kare kabul ederek width kullanıyoruz
 
-    const ratioScore = Number(b.ratio === '16_9') - Number(a.ratio === '16_9')
-    if (ratioScore !== 0) {
-      return ratioScore
-    }
+    const areaA = wA * hA
+    const areaB = wB * hB
 
-    return (b.width ?? 0) - (a.width ?? 0)
+    return areaB - areaA
   })
 
   return toHttps(ranked[0]?.url)
@@ -165,7 +164,8 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
     venue: venue?.name,
     venueId: venue?.id,
     category: classification?.segment?.name,
-    genre: classification?.genre?.name
+    genre: classification?.genre?.name,
+    priceLabel: formatPriceRange(event.priceRanges)
   }
 }
 
@@ -199,7 +199,8 @@ export function toFavoriteEvent(event: EventSummary): FavoriteEvent {
     dateLabel: event.dateLabel,
     city: event.city,
     venue: event.venue,
-    category: event.category
+    category: event.category,
+    priceLabel: event.priceLabel
   }
 }
 

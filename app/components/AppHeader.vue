@@ -1,12 +1,11 @@
 <script setup lang="ts">
-const route = useRoute()
 const favorites = useFavoritesStore()
 
-  const items = computed(() => [
-    { label: 'Keşfet', to: '/', icon: 'i-lucide-compass' },
-    { label: 'Etkinlikler', to: '/events', icon: 'i-lucide-ticket' },
-    { label: 'Favoriler', to: '/favorites', icon: 'i-lucide-heart' }
-  ])
+const items = computed(() => [
+  { label: 'Keşfet', to: '/', icon: 'i-lucide-compass' },
+  { label: 'Etkinlikler', to: '/events', icon: 'i-lucide-ticket' },
+  { label: 'Favoriler', to: '/favorites', icon: 'i-lucide-heart' }
+])
 
 onMounted(() => {
   favorites.init()

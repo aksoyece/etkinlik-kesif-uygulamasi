@@ -59,7 +59,7 @@ export interface TicketmasterVenue extends TicketmasterNamedEntity {
   }
 }
 
-export interface TicketmasterAttraction extends TicketmasterNamedEntity {}
+export type TicketmasterAttraction = TicketmasterNamedEntity
 
 export interface TicketmasterClassification {
   primary?: boolean
@@ -154,6 +154,7 @@ export interface EventSummary {
   venueId?: string
   category?: string
   genre?: string
+  priceLabel?: string
 }
 
 export interface AttractionSummary {
@@ -200,6 +201,7 @@ export interface FavoriteEvent {
   city?: string
   venue?: string
   category?: string
+  priceLabel?: string
 }
 
 export interface EventListResult {

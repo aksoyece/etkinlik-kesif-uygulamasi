@@ -25,9 +25,8 @@ useSeoMeta({
     <!-- 4. SPACING: Hero section başlık ve açıklama arası boşluk artırıldı (space-y-6 yapıldı) -->
     <section class="mb-12 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
       <div class="space-y-6">
-        <!-- 1. RENK PALETİ: Genel kırmızı accent kullanımı sınırlandırıldı, burası neutral yapıldı -->
         <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500">
-          Stub No. 07 • Discovery API
+          Discovery API • Etkinlik Keşif
         </p>
         <h1 class="font-ticket text-4xl leading-tight text-[#1A1A1A] sm:text-5xl dark:text-[#F7F5F0]">
           Yaklaşan etkinlikleri keşfet
@@ -37,14 +36,14 @@ useSeoMeta({
           Konser, spor, tiyatro ve daha fazlasını arayın, şehre ve tarihe göre filtreleyin, favorilerinize kaydedin.
         </p>
         <div class="flex flex-wrap gap-3">
-          <!-- 1. RENK PALETİ: "Tüm etkinlikler" butonu kırmızı accent kuralına uymak için nötr yapıldı -->
+          <!-- 3. "Tüm etkinlikler" buton rengi: Önceki kırmızı ana CTA rengine (primary) geri çevrildi -->
           <UButton
             to="/events"
-            color="neutral"
+            color="primary"
             variant="solid"
             icon="i-lucide-ticket"
             size="lg"
-            class="transition-transform duration-200 hover:scale-105 active:scale-95"
+            class="transition-transform duration-200 hover:scale-105 active:scale-95 hover:brightness-110"
           >
             Tüm etkinlikler
           </UButton>
@@ -63,13 +62,13 @@ useSeoMeta({
 
       <div class="ticket-stub p-6">
         <div class="flex-1 space-y-3 p-2">
-          <!-- 1. RENK PALETİ: Kırmızı accent kuralına uymak için burası nötr yapıldı -->
-          <p class="font-ticket text-[10px] text-neutral-400 dark:text-neutral-500">Guest pass</p>
-          <p class="font-ticket text-sm font-semibold">Arama • Filtre • Favori</p>
-          <div class="ticket-barcode" />
-          <p class="text-xs text-neutral-400 dark:text-neutral-500 leading-relaxed">
-            Boş satırlar bilete benzer: veri yoksa çizgi görünür, hata gibi durmaz.
+          <p class="font-ticket text-[10px] text-neutral-400 dark:text-neutral-500">
+            Keşif Kartı
           </p>
+          <p class="font-ticket text-sm font-semibold">
+            Arama • Filtre • Favori
+          </p>
+          <div class="ticket-barcode animate-pulse" />
         </div>
       </div>
     </section>
@@ -85,8 +84,10 @@ useSeoMeta({
           v-model="state.keyword"
           @submit="onSubmit"
         />
+        <!-- 5. Loading State: Filtre yüklenirken butona spinner eklemek için pending prop'u geçildi -->
         <EventFilters
           v-model="state"
+          :pending="pending"
           @reset="reset"
         />
       </UForm>

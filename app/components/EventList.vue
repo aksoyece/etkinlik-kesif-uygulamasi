@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:page': [page: number]
-  retry: []
+  'retry': []
 }>()
 
 const currentPage = computed({
@@ -37,7 +37,7 @@ const currentPage = computed({
       >
         <!-- Görsel Skeleton (Sabit aspect-[4/3] yapıldı) -->
         <div class="w-full sm:w-[40%] aspect-[4/3] bg-neutral-200 dark:bg-neutral-800 flex-none" />
-        
+
         <!-- Mobil Yatay Yırtılma Çizgisi -->
         <div class="ticket-tear-horizontal block sm:hidden" />
 
@@ -63,6 +63,14 @@ const currentPage = computed({
               <USkeleton class="h-2.5 w-1/4 bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
               <USkeleton class="h-4 w-11/12 bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
             </div>
+            <div class="space-y-1">
+              <USkeleton class="h-2.5 w-1/3 bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
+              <USkeleton class="h-4 w-3/4 bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
+            </div>
+            <div class="space-y-1">
+              <USkeleton class="h-2.5 w-1/3 bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
+              <USkeleton class="h-4 w-3/4 bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
+            </div>
           </div>
           <div class="mt-auto pt-4">
             <USkeleton class="h-8 w-full bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
@@ -77,10 +85,15 @@ const currentPage = computed({
       class="max-w-2xl mx-auto ticket-stub flex flex-col items-center text-center p-10 gap-6 border-red-500/20 dark:border-red-500/10"
     >
       <div class="rounded-full bg-red-50 dark:bg-red-950/20 p-4 text-red-500">
-        <UIcon name="i-lucide-triangle-alert" class="size-10 animate-pulse" />
+        <UIcon
+          name="i-lucide-triangle-alert"
+          class="size-10 animate-pulse"
+        />
       </div>
       <div class="space-y-2">
-        <h3 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white tracking-wider">BAĞLANTI KESİLDİ</h3>
+        <h3 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white tracking-wider">
+          BAĞLANTI KESİLDİ
+        </h3>
         <p class="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm leading-relaxed">
           Etkinlik biletleri yüklenirken bir sorun oluştu. Sistem geçici olarak yoğun olabilir veya internet bağlantınız kesilmiş olabilir.
         </p>
@@ -104,14 +117,22 @@ const currentPage = computed({
     >
       <div class="relative">
         <div class="rounded-full bg-neutral-100 dark:bg-neutral-800/50 p-4 text-neutral-400 dark:text-neutral-500">
-          <UIcon name="i-lucide-store" class="size-10" />
+          <UIcon
+            name="i-lucide-store"
+            class="size-10"
+          />
         </div>
         <div class="absolute -bottom-1 -right-1 rounded-full bg-amber-500 p-1 text-white ring-2 ring-white dark:ring-neutral-900">
-          <UIcon name="i-lucide-ticket" class="size-3" />
+          <UIcon
+            name="i-lucide-ticket"
+            class="size-3"
+          />
         </div>
       </div>
       <div class="space-y-2">
-        <h3 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white tracking-wider">BİLET GİŞESİ BOŞ</h3>
+        <h3 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white tracking-wider">
+          BİLET GİŞESİ BOŞ
+        </h3>
         <p class="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm leading-relaxed">
           Aradığınız kriterlere uygun aktif bir etkinlik bulamadık. Lütfen filtrelerinizi veya arama kelimenizi güncelleyip tekrar deneyin.
         </p>
@@ -135,12 +156,13 @@ const currentPage = computed({
         v-if="(total || 0) > PAGE_SIZE"
         class="flex justify-center pt-4"
       >
+        <!-- 6. Sayfalama (Pagination) Görünümü: Ellipsis'li kısaltılmış görünüm için show-edges ve sibling-count ayarlandı -->
         <UPagination
           v-model:page="currentPage"
           :total="total"
           :items-per-page="PAGE_SIZE"
           :sibling-count="1"
-          show-edges
+          :show-edges="true"
         />
       </div>
     </template>

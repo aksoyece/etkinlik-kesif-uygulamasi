@@ -22,7 +22,7 @@ useHead({
     <UFooter :ui="{ container: 'max-w-7xl' }">
       <template #left>
         <p class="font-ticket text-xs text-muted">
-          Stub series • Ticketmaster • {{ new Date().getFullYear() }}
+          Etkinlik Keşif • Ticketmaster Discovery API • {{ new Date().getFullYear() }}
         </p>
       </template>
       <template #right>

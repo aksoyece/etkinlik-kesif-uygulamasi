@@ -23,8 +23,9 @@ useSeoMeta({
 <template>
   <UContainer class="py-8 sm:py-12">
     <div class="mb-8 space-y-2">
-      <!-- 1. RENK PALETİ: Kırmızı accent kuralına uymak için burası nötr yapıldı -->
-      <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500">All events</p>
+      <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500">
+        All events
+      </p>
       <h1 class="font-ticket text-3xl text-[#1A1A1A] dark:text-[#F7F5F0]">
         Etkinlikler
       </h1>
@@ -44,8 +45,10 @@ useSeoMeta({
           v-model="state.keyword"
           @submit="onSubmit"
         />
+        <!-- 5. Loading State: Filtre yüklenirken butona spinner eklemek için pending prop'u geçildi -->
         <EventFilters
           v-model="state"
+          :pending="pending"
           @reset="reset"
         />
       </UForm>

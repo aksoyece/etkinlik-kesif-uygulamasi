@@ -15,7 +15,9 @@ onMounted(() => {
   <UContainer class="py-8 sm:py-12">
     <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
       <div>
-        <p class="font-ticket text-xs text-[#E8432E]">Stub book</p>
+        <p class="font-ticket text-xs text-[#E8432E]">
+          Stub book
+        </p>
         <h1 class="font-ticket text-3xl text-[#1A1A1A] dark:text-[#F7F5F0]">
           Favoriler
         </h1>
@@ -41,10 +43,15 @@ onMounted(() => {
       class="max-w-2xl mx-auto ticket-stub flex flex-col items-center text-center p-10 gap-6 border-dashed border-neutral-300 dark:border-neutral-800"
     >
       <div class="rounded-full bg-neutral-100 dark:bg-neutral-800/50 p-4 text-neutral-400">
-        <UIcon name="i-lucide-heart" class="size-10 text-[#E8432E]" />
+        <UIcon
+          name="i-lucide-heart"
+          class="size-10 text-[#E8432E]"
+        />
       </div>
       <div class="space-y-2">
-        <h3 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white tracking-wider">HENÜZ FAVORİ YOK</h3>
+        <h3 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white tracking-wider">
+          HENÜZ FAVORİ YOK
+        </h3>
         <p class="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm leading-relaxed">
           Beğendiğiniz etkinlikleri bilet kartlarındaki kalp ikonuyla favorilerinize kaydedebilirsiniz.
         </p>

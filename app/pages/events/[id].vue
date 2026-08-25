@@ -13,10 +13,20 @@ const favorited = computed(() => event.value ? favorites.isFavorite(event.value.
 const venueInfo = computed(() => venue.value || event.value?.venueDetail)
 const mapLink = computed(() => mapsUrl(venueInfo.value))
 
-const errorMessage = computed(() => {
-  const value = error.value as { statusMessage?: string, message?: string } | null
-  return value?.statusMessage || value?.message || 'Etkinlik detayı alınamadı.'
-})
+// 9. 404 Sayfası: Olmayan bir etkinlik ID'sine gidildiğinde fatal 404 hatası fırlatır, böylece custom error.vue tetiklenir
+watch(error, (newError) => {
+  if (newError) {
+    const err = newError as { statusCode?: number, status?: number }
+    const statusCode = err.statusCode || err.status || 500
+    if (statusCode === 404) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Etkinlik Bulunamadı',
+        fatal: true
+      })
+    }
+  }
+}, { immediate: true })
 
 useSeoMeta({
   title: () => event.value?.name || 'Etkinlik detayı',
@@ -54,6 +64,38 @@ const categoryBadgeClass = computed(() => {
   if (cat.includes('FILM')) return 'bg-[#E8432E] text-white' // Film: Kırmızı (En öne çıkan kategori)
   return 'bg-neutral-500 text-white' // Miscellaneous / Diğer: Gri
 })
+
+// 8. Barkod Deseni Çeşitliliği: Detay sayfasındaki bilet için de deterministik barkod üretilir
+const barcodeStyle = computed(() => {
+  const eventId = event.value?.id || 'default'
+  let seed = 0
+  for (let i = 0; i < eventId.length; i++) {
+    seed = eventId.charCodeAt(i) + ((seed << 5) - seed)
+  }
+
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296
+    return seed / 4294967296
+  }
+
+  const lines: string[] = []
+  let currentPos = 0
+
+  const numLines = 25 + Math.floor(random() * 10)
+  for (let i = 0; i < numLines; i++) {
+    const lineWidth = Math.floor(random() * 3) + 1
+    const spaceWidth = Math.floor(random() * 4) + 1
+
+    currentPos += lineWidth
+    lines.push(`currentColor ${currentPos - lineWidth}px ${currentPos}px`)
+    currentPos += spaceWidth
+    lines.push(`transparent ${currentPos - spaceWidth}px ${currentPos}px`)
+  }
+
+  return {
+    backgroundImage: `repeating-linear-gradient(90deg, ${lines.join(', ')})`
+  }
+})
 </script>
 
 <template>
@@ -80,23 +122,31 @@ const categoryBadgeClass = computed(() => {
       </div>
     </div>
 
-    <!-- Hata Durumu (Bilet Temalı) -->
+    <!-- 12. Hata Durumu (Bilet Temalı ve Kullanıcı Dostu - Ham Hata Gizlendi) -->
     <div
       v-else-if="error"
-      class="max-w-2xl mx-auto ticket-stub flex flex-col items-center text-center p-8 gap-4 border-red-500/30 dark:border-red-500/20"
+      class="max-w-2xl mx-auto ticket-stub flex flex-col items-center text-center p-10 gap-6 border-red-500/20 dark:border-red-500/10"
     >
-      <div class="rounded-full bg-red-50 dark:bg-red-950/30 p-3 text-red-500">
-        <UIcon name="i-lucide-triangle-alert" class="size-8" />
+      <div class="rounded-full bg-red-50 dark:bg-red-950/20 p-4 text-red-500">
+        <UIcon
+          name="i-lucide-triangle-alert"
+          class="size-10 animate-pulse"
+        />
       </div>
-      <h3 class="font-ticket text-xl font-bold text-neutral-900 dark:text-white">Etkinlik Yüklenemedi</h3>
-      <p class="text-sm text-neutral-500 dark:text-neutral-400 max-w-md">
-        {{ errorMessage }}
-      </p>
-      <div class="ticket-barcode max-w-xs my-2 text-red-500/30" />
+      <div class="space-y-2">
+        <h3 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white tracking-wider">
+          BAĞLANTI KESİLDİ
+        </h3>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm leading-relaxed">
+          Etkinlik detayları yüklenirken bir sorun oluştu. Sistem geçici olarak yoğun olabilir veya internet bağlantınız kesilmiş olabilir.
+        </p>
+      </div>
+      <div class="ticket-barcode max-w-xs text-red-500/20 opacity-40" />
       <UButton
         color="primary"
         variant="solid"
         icon="i-lucide-refresh-cw"
+        class="transition-transform duration-200 hover:scale-105 active:scale-95 hover:brightness-110"
         @click="refresh()"
       >
         Tekrar Dene
@@ -164,21 +214,30 @@ const categoryBadgeClass = computed(() => {
 
               <div class="font-ticket flex flex-wrap gap-x-6 gap-y-3 text-xs text-neutral-500 dark:text-neutral-400">
                 <span class="flex items-center gap-2">
-                  <UIcon name="i-lucide-calendar" class="size-4 text-primary" />
+                  <UIcon
+                    name="i-lucide-calendar"
+                    class="size-4 text-primary"
+                  />
                   {{ event.dateLabel }}
                 </span>
                 <span
                   v-if="event.city"
                   class="flex items-center gap-2"
                 >
-                  <UIcon name="i-lucide-map-pin" class="size-4 text-primary" />
+                  <UIcon
+                    name="i-lucide-map-pin"
+                    class="size-4 text-primary"
+                  />
                   {{ event.city }}
                 </span>
                 <span
                   v-if="event.priceLabel"
                   class="flex items-center gap-2"
                 >
-                  <UIcon name="i-lucide-banknote" class="size-4 text-primary" />
+                  <UIcon
+                    name="i-lucide-banknote"
+                    class="size-4 text-primary"
+                  />
                   {{ event.priceLabel }}
                 </span>
               </div>
@@ -205,6 +264,12 @@ const categoryBadgeClass = computed(() => {
                   Bilet al
                 </UButton>
               </div>
+
+              <!-- 8. Barkod Deseni Çeşitliliği: Detay sayfasındaki bilet stub'ına da dinamik barkod eklendi -->
+              <div
+                class="ticket-barcode mt-6 pt-2 text-neutral-300 dark:text-neutral-800 opacity-40"
+                :style="barcodeStyle"
+              />
             </div>
           </div>
 
@@ -294,22 +359,46 @@ const categoryBadgeClass = computed(() => {
               <p class="font-ticket text-base font-bold text-neutral-900 dark:text-white">
                 {{ venueInfo.name }}
               </p>
-              
+
               <div class="space-y-2 text-sm text-neutral-600 dark:text-neutral-300">
-                <p v-if="venueInfo.address" class="flex items-start gap-2">
-                  <UIcon name="i-lucide-map-pin" class="size-4 mt-0.5 text-primary flex-none" />
+                <p
+                  v-if="venueInfo.address"
+                  class="flex items-start gap-2"
+                >
+                  <UIcon
+                    name="i-lucide-map-pin"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
                   <span>{{ venueInfo.address }}</span>
                 </p>
-                <p v-if="venueInfo.boxOffice" class="flex items-start gap-2">
-                  <UIcon name="i-lucide-ticket" class="size-4 mt-0.5 text-primary flex-none" />
+                <p
+                  v-if="venueInfo.boxOffice"
+                  class="flex items-start gap-2"
+                >
+                  <UIcon
+                    name="i-lucide-ticket"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
                   <span>Gişe: {{ venueInfo.boxOffice }}</span>
                 </p>
-                <p v-if="venueInfo.parkingDetail" class="flex items-start gap-2">
-                  <UIcon name="i-lucide-car" class="size-4 mt-0.5 text-primary flex-none" />
+                <p
+                  v-if="venueInfo.parkingDetail"
+                  class="flex items-start gap-2"
+                >
+                  <UIcon
+                    name="i-lucide-car"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
                   <span>Otopark: {{ venueInfo.parkingDetail }}</span>
                 </p>
-                <p v-if="venueInfo.generalRule" class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500 italic">
-                  <UIcon name="i-lucide-info" class="size-4 mt-0.5 text-neutral-400 flex-none" />
+                <p
+                  v-if="venueInfo.generalRule"
+                  class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500 italic"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="size-4 mt-0.5 text-neutral-400 flex-none"
+                  />
                   <span>{{ venueInfo.generalRule }}</span>
                 </p>
               </div>
