@@ -12,7 +12,6 @@ const state = defineModel<{
   sort: string
 }>({ required: true })
 
-// 5. Loading State: Filtre yüklenirken Filtrele butonuna spinner eklemek için pending prop'u alındı
 defineProps<{
   pending?: boolean
 }>()
@@ -26,47 +25,61 @@ const { items: categoryItems, pending: classificationsPending } = useClassificat
 const cityItems = CITY_OPTIONS.map(o => ({ label: o.label, value: o.value as string }))
 const sortItems = SORT_OPTIONS.map(o => ({ label: o.label, value: o.value as string }))
 
-// 2. Tarih Seçici (Date Input): String (YYYY-MM-DD) formatını Nuxt UI'ın beklediği CalendarDate objesine dönüştüren computed yapılar
-const startDateValue = computed({
+type DateRange = { start: DateValue, end: DateValue }
+
+function parseSafe(value: string): DateValue | null {
+  if (!value) {
+    return null
+  }
+  try {
+    return parseDate(value)
+  } catch {
+    return null
+  }
+}
+
+const dateRange = computed<DateRange | null>({
   get: () => {
-    if (!state.value.startDate) return null
-    try {
-      return parseDate(state.value.startDate)
-    } catch {
+    const start = parseSafe(state.value.startDate)
+    const end = parseSafe(state.value.endDate) || start
+    if (!start || !end) {
       return null
     }
+    return { start, end }
   },
   set: (val) => {
-    state.value.startDate = val ? val.toString() : ''
+    state.value.startDate = val?.start ? val.start.toString() : ''
+    state.value.endDate = val?.end ? val.end.toString() : ''
   }
 })
 
-const endDateValue = computed({
-  get: () => {
-    if (!state.value.endDate) return null
-    try {
-      return parseDate(state.value.endDate)
-    } catch {
-      return null
-    }
-  },
-  set: (val) => {
-    state.value.endDate = val ? val.toString() : ''
-  }
-})
+const months = [
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+]
 
-const formatCalendarDate = (date: DateValue | null) => {
-  if (!date) return 'Seçiniz'
-  const months = [
-    'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-  ]
+function formatCalendarDate(date: DateValue) {
   return `${date.day} ${months[date.month - 1]} ${date.year}`
+}
+
+const dateRangeLabel = computed(() => {
+  if (!dateRange.value) {
+    return 'Tarih seçin'
+  }
+  const { start, end } = dateRange.value
+  if (start.toString() === end.toString()) {
+    return formatCalendarDate(start)
+  }
+  return `${formatCalendarDate(start)} – ${formatCalendarDate(end)}`
+})
+
+function clearDateRange() {
+  dateRange.value = null
 }
 </script>
 
 <template>
-  <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+  <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
     <UFormField
       name="city"
       label="Şehir"
@@ -94,9 +107,8 @@ const formatCalendarDate = (date: DateValue | null) => {
 
     <UFormField
       name="startDate"
-      label="Başlangıç tarihi"
+      label="Tarih aralığı"
     >
-      <!-- 2. Tarih Seçici: Segmentli karmaşık girdi yerine Popover + UCalendar ile premium bir deneyim sunuldu -->
       <UPopover class="w-full">
         <UButton
           color="neutral"
@@ -105,20 +117,20 @@ const formatCalendarDate = (date: DateValue | null) => {
         >
           <span class="flex items-center gap-2 truncate">
             <UIcon
-              name="i-lucide-calendar"
+              name="i-lucide-calendar-range"
               class="size-4 opacity-50 flex-none"
             />
-            <span class="truncate">{{ startDateValue ? formatCalendarDate(startDateValue) : 'Seçiniz' }}</span>
+            <span class="truncate">{{ dateRangeLabel }}</span>
           </span>
           <div class="flex items-center gap-1 flex-none">
             <UButton
-              v-if="startDateValue"
+              v-if="dateRange"
               icon="i-lucide-x"
               size="xs"
               color="neutral"
               variant="ghost"
               class="rounded-full p-0.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              @click.stop="startDateValue = null"
+              @click.stop="clearDateRange"
             />
             <UIcon
               name="i-lucide-chevron-down"
@@ -129,51 +141,9 @@ const formatCalendarDate = (date: DateValue | null) => {
 
         <template #content>
           <UCalendar
-            v-model="startDateValue"
-            class="p-2"
-          />
-        </template>
-      </UPopover>
-    </UFormField>
-
-    <UFormField
-      name="endDate"
-      label="Bitiş tarihi"
-    >
-      <!-- 2. Tarih Seçici: Segmentli karmaşık girdi yerine Popover + UCalendar ile premium bir deneyim sunuldu -->
-      <UPopover class="w-full">
-        <UButton
-          color="neutral"
-          variant="outline"
-          class="w-full justify-between text-left font-normal"
-        >
-          <span class="flex items-center gap-2 truncate">
-            <UIcon
-              name="i-lucide-calendar"
-              class="size-4 opacity-50 flex-none"
-            />
-            <span class="truncate">{{ endDateValue ? formatCalendarDate(endDateValue) : 'Seçiniz' }}</span>
-          </span>
-          <div class="flex items-center gap-1 flex-none">
-            <UButton
-              v-if="endDateValue"
-              icon="i-lucide-x"
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              class="rounded-full p-0.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              @click.stop="endDateValue = null"
-            />
-            <UIcon
-              name="i-lucide-chevron-down"
-              class="size-4 opacity-50"
-            />
-          </div>
-        </UButton>
-
-        <template #content>
-          <UCalendar
-            v-model="endDateValue"
+            v-model="dateRange"
+            range
+            :number-of-months="1"
             class="p-2"
           />
         </template>
@@ -192,7 +162,6 @@ const formatCalendarDate = (date: DateValue | null) => {
     </UFormField>
 
     <div class="flex items-end gap-2">
-      <!-- 5. Loading State: Filtre yüklenirken butonda spinner gösterilir -->
       <UButton
         type="submit"
         icon="i-lucide-filter"
