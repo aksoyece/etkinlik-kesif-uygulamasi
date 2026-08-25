@@ -33,12 +33,10 @@ useSeoMeta({
       </p>
     </div>
 
-    <!-- 4. SPACING: Section dikey boşluğu space-y-8'e çıkarıldı -->
     <section class="space-y-8">
       <UForm
         :schema="schema"
         :state="state"
-        <!-- 4. SPACING: Form padding'i p-5 sm:p-7 yapıldı -->
         class="ticket-stub flex-col space-y-4 p-5 sm:p-7"
         @submit="onSubmit"
       >
