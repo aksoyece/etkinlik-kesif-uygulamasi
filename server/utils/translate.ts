@@ -81,7 +81,7 @@ async function translateChunk(text: string): Promise<string> {
 
 /**
  * İngilizce Ticketmaster metnini Türkçeye çevirir.
- * @param force İngilizce tespitini atla (mekan alanları için)
+ * Sözlük sonucu yeterince Türkçe ise makine çevirisine gitmez (İngilizce override engellenir).
  */
 export async function translateToTurkish(
   text?: string | null,
@@ -97,23 +97,55 @@ export async function translateToTurkish(
   }
 
   const phrased = localizeTicketmasterText(trimmed) || trimmed
-  if (!options.force && !looksMostlyEnglish(phrased)) {
+
+  // Sözlük işini bitirdiyse olduğu gibi dön
+  if (!looksMostlyEnglish(phrased)) {
     return phrased
   }
 
-  // Sözlük sonrası hâlâ İngilizce ise (veya force) makine çevirisi dene
-  if (!looksMostlyEnglish(phrased) && !options.force) {
-    return phrased
-  }
-
-  // Force ama sözlük yeterli Türkçeleştirdiyse makineye gerek yok
-  if (options.force && !looksMostlyEnglish(phrased)) {
+  if (!options.force && !looksMostlyEnglish(trimmed)) {
     return phrased
   }
 
   const parts = splitForTranslation(phrased)
-  const translatedParts = await Promise.all(parts.map(part => translateChunk(part)))
-  return translatedParts.join(' ').replace(/[ \t]{2,}/g, ' ').trim()
+  const translatedParts = await Promise.all(parts.map(async (part) => {
+    const machine = await translateChunk(part)
+    // Makine hâlâ İngilizceyse sözlük sonucunu koru
+    if (looksMostlyEnglish(machine) && !looksMostlyEnglish(localizeTicketmasterText(part) || '')) {
+      return localizeTicketmasterText(part) || part
+    }
+    if (looksMostlyEnglish(machine)) {
+      return localizeTicketmasterText(part) || machine
+    }
+    return machine
+  }))
+
+  const joined = translatedParts.join(' ').replace(/[ \t]{2,}/g, ' ').trim()
+  return looksMostlyEnglish(joined) ? phrased : joined
+}
+
+export async function localizeVenueCopy<T extends {
+  address?: string
+  country?: string
+  parkingDetail?: string
+  generalRule?: string
+  boxOffice?: string
+}>(venue: T): Promise<T> {
+  const [parkingDetail, generalRule, boxOffice, address] = await Promise.all([
+    translateToTurkish(venue.parkingDetail, { force: true }),
+    translateToTurkish(venue.generalRule, { force: true }),
+    translateToTurkish(venue.boxOffice, { force: true }),
+    translateToTurkish(venue.address, { force: true })
+  ])
+
+  return {
+    ...venue,
+    address: localizeAddressLine(address) || address,
+    country: localizeCountryName(venue.country) || venue.country,
+    parkingDetail,
+    generalRule,
+    boxOffice
+  }
 }
 
 export async function localizeEventCopy<T extends {
@@ -128,38 +160,20 @@ export async function localizeEventCopy<T extends {
     boxOffice?: string
   }
 }>(detail: T): Promise<T> {
-  const venue = detail.venueDetail
-
-  const [
-    info,
-    pleaseNote,
-    parkingDetail,
-    generalRule,
-    boxOffice,
-    address
-  ] = await Promise.all([
+  const [info, pleaseNote] = await Promise.all([
     translateToTurkish(detail.info),
-    translateToTurkish(detail.pleaseNote),
-    translateToTurkish(venue?.parkingDetail, { force: true }),
-    translateToTurkish(venue?.generalRule, { force: true }),
-    translateToTurkish(venue?.boxOffice, { force: true }),
-    translateToTurkish(venue?.address, { force: true })
+    translateToTurkish(detail.pleaseNote)
   ])
+
+  const venueDetail = detail.venueDetail
+    ? await localizeVenueCopy(detail.venueDetail)
+    : detail.venueDetail
 
   return {
     ...detail,
     info,
     pleaseNote,
     country: localizeCountryName(detail.country) || detail.country,
-    venueDetail: venue
-      ? {
-          ...venue,
-          address: localizeAddressLine(address) || address,
-          country: localizeCountryName(venue.country) || venue.country,
-          parkingDetail,
-          generalRule,
-          boxOffice
-        }
-      : venue
+    venueDetail
   }
 }

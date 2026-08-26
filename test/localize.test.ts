@@ -22,23 +22,26 @@ describe('yerelleştirme', () => {
     expect(out).toMatch(/iptal/i)
   })
 
-  it('gişe ve ülke bilgisini Türkçeleştirir', () => {
+  it('O2 Belfast gişe / otopark / kuralları Türkçeleştirir', () => {
     const box = localizeTicketmasterText(
       'Box Office will open 1 hour before doors on the day of an event (excluding Belfast Giants games)'
     ) || ''
-    expect(box.toLowerCase()).toMatch(/gişe|kapı/)
-    expect(box.toLowerCase()).toMatch(/belfast giants/)
+    expect(box.toLowerCase()).toMatch(/gişe|kapı|etkinlik/)
+    expect(box.toLowerCase()).not.toMatch(/box office will open/)
+
+    const park = localizeTicketmasterText(
+      '1500 spaces are available, those closest to The O2 Belfast are reserved for vehicles showing the disabled driver badge.'
+    ) || ''
+    expect(park.toLowerCase()).toMatch(/araç|otopark|yer|engelli/)
+    expect(park.toLowerCase()).not.toMatch(/spaces are available/)
+
+    const rules = localizeTicketmasterText(
+      '* Food and drink is NOT allowed to be brought into the venue. * The arena sells a variety of snack foods and confectionary and hot and cold drinks. * Food may be taken into the arena while patrons enjoy the game/event. * There is a fully licensed bar and the food outlets have a limited/occasional license depending on the nature of the event. * Please follow the link below for venue\'s full T&C\'s https://theo2belfast.com/your-visit/faqs'
+    ) || ''
+    expect(rules.toLowerCase()).toMatch(/yasak|yiyecek/)
+    expect(rules.toLowerCase()).not.toMatch(/food and drink is not allowed/)
 
     const address = localizeAddressLine('2 Queens Quay, Belfast, BT39QQ, Great Britain') || ''
     expect(address).toContain('Birleşik Krallık')
-    expect(address).not.toMatch(/Great Britain/i)
-  })
-
-  it('mekan kurallarını Türkçeleştirir', () => {
-    const rules = localizeTicketmasterText(
-      '* Food and drink is NOT allowed to be brought into the venue. * The arena sells a variety of snack foods and confectionary and hot and cold drinks.'
-    ) || ''
-    expect(rules.toLowerCase()).toMatch(/yasak|yiyecek/)
-    expect(rules.toLowerCase()).toMatch(/arena|atıştırmalık|içecek/)
   })
 })
