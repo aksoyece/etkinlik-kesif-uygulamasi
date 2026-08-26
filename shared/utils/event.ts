@@ -234,7 +234,8 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
     venueId: venue?.id,
     category: classification?.segment?.name,
     genre: classification?.genre?.name,
-    priceLabel: formatPriceRange(event.priceRanges)
+    priceLabel: formatPriceRange(event.priceRanges),
+    status: event.dates?.status?.code
   }
 }
 

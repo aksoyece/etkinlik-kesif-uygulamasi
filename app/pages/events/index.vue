@@ -30,7 +30,7 @@ useSeoMeta({
         Etkinlikler
       </h1>
       <p class="text-neutral-500 dark:text-neutral-400">
-        Türkiye’deki yaklaşan etkinlikleri keşfedin.
+        Birleşik Krallık’taki yaklaşan etkinlikleri keşfedin.
       </p>
     </div>
 

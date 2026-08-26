@@ -1,24 +1,18 @@
 import { z } from 'zod'
 import type { EventFilterState, EventSearchParams } from '../types/event'
 import { nowTicketmasterDateTime, toTicketmasterDateTime } from './event'
+import { ACTIVE_MARKET, getActiveCountryCode } from './market'
 
 export const PAGE_SIZE = 12
 export const MAX_RESULTS = 1000
 export const ALL_FILTER_VALUE = 'all'
-export const DEFAULT_COUNTRY_CODE = 'TR'
+
+/** Aktif market’in countryCode değeri (şimdilik GB). */
+export const DEFAULT_COUNTRY_CODE = getActiveCountryCode()
 
 export const CITY_OPTIONS = [
   { label: 'Tüm şehirler', value: ALL_FILTER_VALUE },
-  { label: 'İstanbul', value: 'Istanbul' },
-  { label: 'Ankara', value: 'Ankara' },
-  { label: 'İzmir', value: 'Izmir' },
-  { label: 'Antalya', value: 'Antalya' },
-  { label: 'Bursa', value: 'Bursa' },
-  { label: 'Muğla', value: 'Mugla' },
-  { label: 'Eskişehir', value: 'Eskisehir' },
-  { label: 'Gaziantep', value: 'Gaziantep' },
-  { label: 'Adana', value: 'Adana' },
-  { label: 'Konya', value: 'Konya' }
+  ...ACTIVE_MARKET.cities
 ] as const
 
 export const DEFAULT_CATEGORY_OPTIONS = [
@@ -128,7 +122,9 @@ export function toTicketmasterQuery(params: EventSearchParams): Record<string, s
     page: String(Math.min(apiPage, maxPage)),
     sort: params.sort || 'date,asc',
     includeTest: 'no',
-    countryCode: DEFAULT_COUNTRY_CODE
+    includeTBA: 'no',
+    includeTBD: 'no',
+    countryCode: getActiveCountryCode()
   }
 
   if (params.keyword) query.keyword = params.keyword

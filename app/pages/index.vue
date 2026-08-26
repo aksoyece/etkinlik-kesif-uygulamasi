@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import type { EventSummary } from '#shared/types/event'
 import { CITY_OPTIONS } from '#shared/utils/filters'
+import { pickDistinctFeatured } from '#shared/utils/featured'
+import { ACTIVE_MARKET } from '#shared/utils/market'
 import { readLastCity, writeLastCity } from '#shared/utils/event'
 
 useSeoMeta({
   title: 'Evently',
-  description: 'Evently ile Türkiye’deki konser, spor ve sanat etkinliklerini keşfedin.',
+  description: 'Evently ile Birleşik Krallık’taki konser, spor ve sanat etkinliklerini keşfedin.',
   ogTitle: 'Evently',
-  ogDescription: 'Türkiye pazarındaki yaklaşan etkinlikleri keşfet. Admit One bilet konsepti.',
+  ogDescription: 'Ticketmaster UK pazarındaki yaklaşan etkinlikleri keşfet. Admit One bilet konsepti.',
   twitterCard: 'summary_large_image'
 })
 
@@ -22,14 +23,7 @@ const discoverCategories = [
   { label: 'Aile', value: 'Family', icon: 'i-lucide-users' }
 ]
 
-const popularCities = [
-  { label: 'İstanbul', value: 'Istanbul' },
-  { label: 'Ankara', value: 'Ankara' },
-  { label: 'İzmir', value: 'Izmir' },
-  { label: 'Antalya', value: 'Antalya' },
-  { label: 'Bursa', value: 'Bursa' },
-  { label: 'Muğla', value: 'Mugla' }
-]
+const popularCities = ACTIVE_MARKET.popularCities
 
 function endOfWeekIso() {
   const date = new Date()
@@ -43,45 +37,13 @@ function cityLabel(value: string | null) {
 }
 
 function formatWeekCount(total: number) {
-  if (total >= 1000) return '1.000+'
-  return total.toLocaleString('tr-TR')
-}
-
-function imageKey(url?: string) {
-  if (!url) return ''
-  return url.split('?')[0].replace(/\/\d+x\d+\//g, '/')
-}
-
-function pickDistinctFeatured(pool: EventSummary[], limit = 3) {
-  const selected: EventSummary[] = []
-  const seenIds = new Set<string>()
-  const seenImages = new Set<string>()
-
-  for (const event of pool) {
-    if (selected.length >= limit) break
-    if (seenIds.has(event.id)) continue
-
-    const key = imageKey(event.image)
-    if (key && seenImages.has(key)) continue
-
-    seenIds.add(event.id)
-    if (key) seenImages.add(key)
-    selected.push(event)
-  }
-
-  for (const event of pool) {
-    if (selected.length >= limit) break
-    if (seenIds.has(event.id)) continue
-    seenIds.add(event.id)
-    selected.push(event)
-  }
-
-  return selected
+  if (total >= 1000) return `${(1000).toLocaleString(ACTIVE_MARKET.locale)}+`
+  return total.toLocaleString(ACTIVE_MARKET.locale)
 }
 
 const { events: featuredPool, pending: featuredPending, error: featuredError, refresh: refreshFeatured } = useEvents({
   sort: 'relevance,desc',
-  size: 12,
+  size: 20,
   page: 1
 })
 

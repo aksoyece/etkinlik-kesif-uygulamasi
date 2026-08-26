@@ -1,6 +1,6 @@
 # Evently
 
-Ticketmaster Discovery API 2.0 üzerinden Türkiye pazarındaki gerçek etkinlik verisini (bilet linkleri çoğunlukla Biletix) çeken, Nuxt 4 + Nuxt UI ile yazılmış etkinlik keşif uygulaması.
+Ticketmaster Discovery API 2.0 üzerinden Birleşik Krallık (UK / `countryCode=GB`) pazarındaki gerçek etkinlik verisini çeken, Nuxt 4 + Nuxt UI ile yazılmış etkinlik keşif uygulaması. Aktif market `shared/utils/market.ts` üzerinden değiştirilebilir; TR tanımı ileride seçenek olarak hazır.
 
 Marka: **Evently**. Bilet konsepti: **Admit One**.
 

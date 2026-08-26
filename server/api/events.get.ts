@@ -1,6 +1,7 @@
 import type { EventListResult, TicketmasterEventSearchResponse } from '#shared/types/event'
 import { mapTicketmasterEvent } from '#shared/utils/event'
 import { capTotalResults, PAGE_SIZE, toTicketmasterQuery } from '#shared/utils/filters'
+import { getActiveCountryCode } from '#shared/utils/market'
 
 function readString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
@@ -10,6 +11,7 @@ export default defineCachedEventHandler(async (event): Promise<EventListResult> 
   const query = getQuery(event)
   const page = Math.max(1, Number(query.page) || 1)
   const size = Math.min(20, Math.max(1, Number(query.size) || PAGE_SIZE))
+  const countryCode = getActiveCountryCode()
 
   const data = await ticketmasterFetch<TicketmasterEventSearchResponse>(event, '/events.json', {
     ...toTicketmasterQuery({
@@ -22,7 +24,7 @@ export default defineCachedEventHandler(async (event): Promise<EventListResult> 
       page,
       size
     }),
-    countryCode: 'TR'
+    countryCode
   })
 
   const total = capTotalResults(data.page?.totalElements ?? 0, size)
@@ -41,8 +43,8 @@ export default defineCachedEventHandler(async (event): Promise<EventListResult> 
     const query = getQuery(event)
     return [
       'events',
-      'v2',
-      'TR',
+      'v3',
+      getActiveCountryCode(),
       query.keyword,
       query.city,
       query.classificationName,

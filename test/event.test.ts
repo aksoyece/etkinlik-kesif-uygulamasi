@@ -87,6 +87,7 @@ describe('etkinlik yardımcıları', () => {
     expect(mapped.venue).toBe('Blue Note')
     expect(mapped.category).toBe('Music')
     expect(mapped.genre).toBe('Jazz')
+    expect(mapped.status).toBe('onsale')
   })
 
   it('favori ekler ve çıkarır', () => {

@@ -9,18 +9,24 @@ import {
   toSearchParams,
   toTicketmasterQuery
 } from '../shared/utils/filters'
+import { ACTIVE_MARKET, getActiveCountryCode } from '../shared/utils/market'
 
 describe('filtre yardımcıları', () => {
+  it('aktif market UK (GB)', () => {
+    expect(getActiveCountryCode()).toBe('GB')
+    expect(ACTIVE_MARKET.id).toBe('GB')
+  })
+
   it('query parametrelerini filtre state’ine çevirir', () => {
     const state = filtersFromQuery({
       keyword: 'jazz',
-      city: 'Istanbul',
+      city: 'London',
       category: 'Music',
       page: '2'
     })
 
     expect(state.keyword).toBe('jazz')
-    expect(state.city).toBe('Istanbul')
+    expect(state.city).toBe('London')
     expect(state.classificationName).toBe('Music')
     expect(state.sort).toBe('date,asc')
   })
@@ -50,12 +56,12 @@ describe('filtre yardımcıları', () => {
     const query = toTicketmasterQuery(toSearchParams({
       ...defaultFilterState(),
       keyword: 'rock',
-      city: 'Istanbul'
+      city: 'London'
     }, 2))
 
     expect(query.keyword).toBe('rock')
-    expect(query.city).toBe('Istanbul')
-    expect(query.countryCode).toBe('TR')
+    expect(query.city).toBe('London')
+    expect(query.countryCode).toBe('GB')
     expect(query.page).toBe('1')
     expect(query.size).toBe(String(PAGE_SIZE))
     expect(query.startDateTime).toBeTruthy()

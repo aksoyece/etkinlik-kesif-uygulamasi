@@ -155,6 +155,8 @@ export interface EventSummary {
   category?: string
   genre?: string
   priceLabel?: string
+  /** Ticketmaster dates.status.code (onsale, offsale, cancelled, …) */
+  status?: string
 }
 
 export interface AttractionSummary {
