@@ -54,6 +54,11 @@ const TICKETMASTER_IMAGE_SIZES = [
   'BLOCK'
 ]
 
+/** Kart / detay görselleri için minimum genişlik (px) */
+export const MIN_EVENT_IMAGE_WIDTH = 640
+
+export const EVENT_IMAGE_PLACEHOLDER = '/placeholder-event.svg'
+
 export function toHttps(url?: string): string | undefined {
   if (!url) {
     return undefined
@@ -81,36 +86,41 @@ function isLandscapeCover(image: TicketmasterImage): boolean {
   return image.ratio === '16_9' || url.includes('16_9') || url.includes('LANDSCAPE')
 }
 
-function imageArea(image: TicketmasterImage): number {
-  const width = image.width ?? 0
-  const height = image.height ?? width
-  return width * height
-}
-
-export function pickEventImage(images?: TicketmasterImage[]): string | undefined {
+/**
+ * Ticketmaster görsellerinden kart/detay için en net adresi seçer.
+ * images[0] kullanılmaz: 16:9 tercih, fallback’ten kaçın, width’e göre sırala, min 640px.
+ */
+export function getBestEventImage(images?: TicketmasterImage[]): string {
   if (!images?.length) {
-    return undefined
+    return EVENT_IMAGE_PLACEHOLDER
   }
 
-  const usable = images.filter(image => image.url)
+  const usable = images.filter(image => Boolean(image.url))
+  if (!usable.length) {
+    return EVENT_IMAGE_PLACEHOLDER
+  }
+
   const nonFallback = usable.filter(image => !image.fallback)
   let pool = nonFallback.length ? nonFallback : usable
 
-  const sharp = pool.filter(image => (image.width ?? 0) >= 1024)
-  if (sharp.length) {
-    pool = sharp
+  const sharp = pool.filter(image => (image.width ?? 0) >= MIN_EVENT_IMAGE_WIDTH)
+  if (!sharp.length) {
+    return EVENT_IMAGE_PLACEHOLDER
+  }
+  pool = sharp
+
+  const landscape = pool.filter(isLandscapeCover)
+  if (landscape.length) {
+    pool = landscape
   }
 
-  const ranked = [...pool].sort((a, b) => {
-    const coverScore = Number(isLandscapeCover(b)) - Number(isLandscapeCover(a))
-    if (coverScore !== 0) {
-      return coverScore
-    }
+  const ranked = [...pool].sort((a, b) => (b.width ?? 0) - (a.width ?? 0))
+  return toHighResTicketmasterUrl(ranked[0]?.url) || EVENT_IMAGE_PLACEHOLDER
+}
 
-    return imageArea(b) - imageArea(a)
-  })
-
-  return toHighResTicketmasterUrl(ranked[0]?.url)
+/** @deprecated getBestEventImage kullanın */
+export function pickEventImage(images?: TicketmasterImage[]): string {
+  return getBestEventImage(images)
 }
 
 export function formatEventDate(dates?: TicketmasterDates): string {
@@ -211,7 +221,7 @@ export function mapAttraction(attraction: TicketmasterAttraction): AttractionSum
     id: attraction.id,
     name: attraction.name || 'Sanatçı',
     url: attraction.url,
-    image: pickEventImage(attraction.images),
+    image: getBestEventImage(attraction.images),
     genre: classification?.genre?.name || classification?.segment?.name
   }
 }
@@ -224,7 +234,7 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
     id: event.id,
     name: event.name,
     url: event.url,
-    image: pickEventImage(event.images),
+    image: getBestEventImage(event.images),
     dateLabel: formatEventDate(event.dates),
     localDate: event.dates?.start?.localDate,
     localTime: event.dates?.start?.localTime,
@@ -241,11 +251,24 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
 
 export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetail {
   const summary = mapTicketmasterEvent(event)
-  const cover = summary.image
-  const images = [...new Set(
-    [cover, ...(event.images ?? []).map(image => toHighResTicketmasterUrl(image.url))]
-      .filter((url): url is string => Boolean(url))
-  )]
+  const cover = summary.image !== EVENT_IMAGE_PLACEHOLDER ? summary.image : undefined
+
+  const galleryFromApi = (event.images ?? [])
+    .filter(image => Boolean(image.url) && !image.fallback && (image.width ?? 0) >= MIN_EVENT_IMAGE_WIDTH)
+    .sort((a, b) => {
+      const coverScore = Number(isLandscapeCover(b)) - Number(isLandscapeCover(a))
+      if (coverScore !== 0) {
+        return coverScore
+      }
+      return (b.width ?? 0) - (a.width ?? 0)
+    })
+    .map(image => toHighResTicketmasterUrl(image.url))
+    .filter((url): url is string => Boolean(url))
+
+  const images = uniqueGalleryImages([
+    ...(cover ? [cover] : []),
+    ...galleryFromApi
+  ])
 
   return {
     ...summary,
@@ -257,7 +280,7 @@ export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetai
     priceLabel: formatPriceRange(event.priceRanges),
     attractions: (event._embedded?.attractions ?? []).map(mapAttraction),
     venueDetail: mapVenue(event._embedded?.venues?.[0]),
-    images
+    images: images.length ? images : [EVENT_IMAGE_PLACEHOLDER]
   }
 }
 

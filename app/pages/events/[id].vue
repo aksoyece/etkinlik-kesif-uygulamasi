@@ -276,9 +276,9 @@ const barcodeStyle = computed(() => {
           <div class="ticket-stub flex-col">
             <div class="relative h-80 sm:h-96 w-full overflow-hidden">
               <img
-                :src="event.image || event.images[0] || '/placeholder-event.svg'"
+                :src="event.image || '/placeholder-event.svg'"
                 :alt="event.name"
-                class="h-full w-full object-cover"
+                class="h-full w-full object-cover object-center"
                 decoding="async"
               >
               <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -426,7 +426,7 @@ const barcodeStyle = computed(() => {
                 <img
                   :src="image"
                   :alt="event.name"
-                  class="h-full w-full object-cover"
+                  class="h-full w-full object-cover object-center"
                   loading="lazy"
                   decoding="async"
                 >

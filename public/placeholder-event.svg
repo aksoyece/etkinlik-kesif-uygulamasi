@@ -1,7 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" fill="none">
-  <rect width="1200" height="675" fill="#18181B"/>
-  <rect x="80" y="80" width="1040" height="515" rx="28" fill="#27272A"/>
-  <circle cx="600" cy="300" r="72" fill="#7C3AED"/>
-  <rect x="430" y="410" width="340" height="18" rx="9" fill="#52525B"/>
-  <rect x="490" y="448" width="220" height="14" rx="7" fill="#3F3F46"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A1A1A"/>
+      <stop offset="1" stop-color="#2A2A2A"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect x="72" y="72" width="1056" height="531" rx="24" stroke="#3A3A3A" stroke-width="2" fill="#222222"/>
+  <rect x="72" y="72" width="16" height="531" fill="#E8432E"/>
+  <circle cx="600" cy="300" r="56" stroke="#E8432E" stroke-width="3" fill="none"/>
+  <path d="M575 300 L590 315 L635 270" stroke="#E8432E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="600" y="400" text-anchor="middle" fill="#F7F5F0" font-family="ui-monospace, monospace" font-size="28" letter-spacing="0.2em">EVENTLY</text>
+  <text x="600" y="440" text-anchor="middle" fill="#8A8A8A" font-family="ui-monospace, monospace" font-size="14" letter-spacing="0.35em">ADMIT ONE</text>
 </svg>

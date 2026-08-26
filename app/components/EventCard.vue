@@ -138,7 +138,7 @@ function toggleFavorite() {
       <img
         :src="event.image || '/placeholder-event.svg'"
         :alt="event.name"
-        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
         loading="lazy"
         decoding="async"
       >

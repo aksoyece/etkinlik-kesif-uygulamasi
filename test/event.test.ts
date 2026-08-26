@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  EVENT_IMAGE_PLACEHOLDER,
   formatEventDate,
+  getBestEventImage,
   isFavoriteEvent,
   mapTicketmasterEvent,
-  pickEventImage,
   toFavoriteEvent,
   toggleFavoriteEvent,
   toHttps,
@@ -47,8 +48,8 @@ describe('etkinlik yardımcıları', () => {
     expect(toHttps('http://example.com/a.jpg')).toBe('https://example.com/a.jpg')
   })
 
-  it('en uygun görseli seçer', () => {
-    expect(pickEventImage(sampleEvent.images)).toBe('https://cdn.example/cover.jpg')
+  it('en uygun görseli seçer (16:9, min 640, fallback değil)', () => {
+    expect(getBestEventImage(sampleEvent.images)).toBe('https://cdn.example/cover.jpg')
   })
 
   it('Ticketmaster kapak görselini (16:9, fallback olmayan) tercih eder', () => {
@@ -57,7 +58,14 @@ describe('etkinlik yardımcıları', () => {
       { url: 'http://cdn.example/RETINA_LANDSCAPE_16_9.jpg', ratio: '16_9', width: 1024, height: 576, fallback: false },
       { url: 'http://cdn.example/fallback.jpg', ratio: '16_9', width: 2048, height: 1152, fallback: true }
     ]
-    expect(pickEventImage(images)).toBe('https://cdn.example/RETINA_LANDSCAPE_16_9.jpg')
+    expect(getBestEventImage(images)).toBe('https://cdn.example/RETINA_LANDSCAPE_16_9.jpg')
+  })
+
+  it('640px altı görselleri kartta kullanmaz', () => {
+    const images = [
+      { url: 'https://s1.ticketm.net/dam/a/abc/tiny_RECOMENDATION_16_9.jpg', ratio: '16_9', width: 305, height: 171, fallback: false }
+    ]
+    expect(getBestEventImage(images)).toBe(EVENT_IMAGE_PLACEHOLDER)
   })
 
   it('küçük 16:9 yerine yüksek çözünürlüklü görseli seçer', () => {
@@ -65,7 +73,7 @@ describe('etkinlik yardımcıları', () => {
       { url: 'https://s1.ticketm.net/dam/a/abc/tiny_RECOMENDATION_16_9.jpg', ratio: '16_9', width: 305, height: 171, fallback: false },
       { url: 'https://s1.ticketm.net/dam/a/abc/wide_TABLET_LANDSCAPE_3_2.jpg', ratio: '3_2', width: 2048, height: 1365, fallback: false }
     ]
-    expect(pickEventImage(images)).toBe('https://s1.ticketm.net/dam/a/abc/wide_TABLET_LANDSCAPE_LARGE_16_9.jpg')
+    expect(getBestEventImage(images)).toBe('https://s1.ticketm.net/dam/a/abc/wide_TABLET_LANDSCAPE_LARGE_16_9.jpg')
   })
 
   it('Ticketmaster CDN adresini büyük 16:9 varyanta yükseltir', () => {
@@ -88,6 +96,7 @@ describe('etkinlik yardımcıları', () => {
     expect(mapped.category).toBe('Music')
     expect(mapped.genre).toBe('Jazz')
     expect(mapped.status).toBe('onsale')
+    expect(mapped.image).toBe('https://cdn.example/cover.jpg')
   })
 
   it('favori ekler ve çıkarır', () => {
