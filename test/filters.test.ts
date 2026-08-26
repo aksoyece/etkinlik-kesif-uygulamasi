@@ -14,13 +14,13 @@ describe('filtre yardımcıları', () => {
   it('query parametrelerini filtre state’ine çevirir', () => {
     const state = filtersFromQuery({
       keyword: 'jazz',
-      city: 'London',
+      city: 'Istanbul',
       category: 'Music',
       page: '2'
     })
 
     expect(state.keyword).toBe('jazz')
-    expect(state.city).toBe('London')
+    expect(state.city).toBe('Istanbul')
     expect(state.classificationName).toBe('Music')
     expect(state.sort).toBe('date,asc')
   })
@@ -50,11 +50,12 @@ describe('filtre yardımcıları', () => {
     const query = toTicketmasterQuery(toSearchParams({
       ...defaultFilterState(),
       keyword: 'rock',
-      city: 'Berlin'
+      city: 'Istanbul'
     }, 2))
 
     expect(query.keyword).toBe('rock')
-    expect(query.city).toBe('Berlin')
+    expect(query.city).toBe('Istanbul')
+    expect(query.countryCode).toBe('TR')
     expect(query.page).toBe('1')
     expect(query.size).toBe(String(PAGE_SIZE))
     expect(query.startDateTime).toBeTruthy()

@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { EventSummary } from '#shared/types/event'
+import { CITY_OPTIONS } from '#shared/utils/filters'
 import { readLastCity, writeLastCity } from '#shared/utils/event'
 
 useSeoMeta({
   title: 'Evently',
-  description: 'Evently ile yaklaşan konser, spor ve sanat etkinliklerini keşfedin.',
+  description: 'Evently ile Türkiye’deki konser, spor ve sanat etkinliklerini keşfedin.',
   ogTitle: 'Evently',
-  ogDescription: 'Yaklaşan etkinlikleri keşfet. Admit One bilet konsepti.',
+  ogDescription: 'Türkiye pazarındaki yaklaşan etkinlikleri keşfet. Admit One bilet konsepti.',
   twitterCard: 'summary_large_image'
 })
 
@@ -21,10 +23,12 @@ const discoverCategories = [
 ]
 
 const popularCities = [
-  { label: 'New York', value: 'New York' },
-  { label: 'London', value: 'London' },
-  { label: 'Los Angeles', value: 'Los Angeles' },
-  { label: 'Chicago', value: 'Chicago' }
+  { label: 'İstanbul', value: 'Istanbul' },
+  { label: 'Ankara', value: 'Ankara' },
+  { label: 'İzmir', value: 'Izmir' },
+  { label: 'Antalya', value: 'Antalya' },
+  { label: 'Bursa', value: 'Bursa' },
+  { label: 'Muğla', value: 'Mugla' }
 ]
 
 function endOfWeekIso() {
@@ -33,11 +37,55 @@ function endOfWeekIso() {
   return date.toISOString().slice(0, 10)
 }
 
-const { events: featuredEvents, pending: featuredPending, error: featuredError, refresh: refreshFeatured } = useEvents({
+function cityLabel(value: string | null) {
+  if (!value) return null
+  return CITY_OPTIONS.find(option => option.value === value)?.label ?? value
+}
+
+function formatWeekCount(total: number) {
+  if (total >= 1000) return '1.000+'
+  return total.toLocaleString('tr-TR')
+}
+
+function imageKey(url?: string) {
+  if (!url) return ''
+  return url.split('?')[0].replace(/\/\d+x\d+\//g, '/')
+}
+
+function pickDistinctFeatured(pool: EventSummary[], limit = 3) {
+  const selected: EventSummary[] = []
+  const seenIds = new Set<string>()
+  const seenImages = new Set<string>()
+
+  for (const event of pool) {
+    if (selected.length >= limit) break
+    if (seenIds.has(event.id)) continue
+
+    const key = imageKey(event.image)
+    if (key && seenImages.has(key)) continue
+
+    seenIds.add(event.id)
+    if (key) seenImages.add(key)
+    selected.push(event)
+  }
+
+  for (const event of pool) {
+    if (selected.length >= limit) break
+    if (seenIds.has(event.id)) continue
+    seenIds.add(event.id)
+    selected.push(event)
+  }
+
+  return selected
+}
+
+const { events: featuredPool, pending: featuredPending, error: featuredError, refresh: refreshFeatured } = useEvents({
   sort: 'relevance,desc',
-  size: 3,
+  size: 12,
   page: 1
 })
+
+const featuredEvents = computed(() => pickDistinctFeatured(featuredPool.value, 3))
 
 const { total: weekTotal, pending: weekPending } = useEvents({
   sort: 'date,asc',
@@ -77,6 +125,10 @@ function goCity(value: string) {
   })
 }
 
+function scrollToSpotlight() {
+  document.getElementById('spotlight')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 const passStats = computed(() => [
   {
     icon: 'i-lucide-heart',
@@ -87,14 +139,14 @@ const passStats = computed(() => [
   {
     icon: 'i-lucide-map-pin',
     text: lastCity.value
-      ? `Son baktığın şehir: ${lastCity.value}`
+      ? `Son baktığın şehir: ${cityLabel(lastCity.value)}`
       : 'Henüz şehir seçmedin'
   },
   {
     icon: 'i-lucide-ticket',
     text: weekPending.value
       ? 'Bu hafta etkinlikler yükleniyor…'
-      : `Bu hafta ${weekTotal.value || 0} etkinlik`
+      : `Bu hafta ${formatWeekCount(weekTotal.value || 0)} etkinlik`
   }
 ])
 </script>
@@ -113,18 +165,18 @@ const passStats = computed(() => [
           </h1>
         </div>
         <p class="max-w-2xl text-base text-neutral-500 dark:text-neutral-400 leading-relaxed">
-          Konser, spor, tiyatro ve daha fazlasını arayın, şehre ve tarihe göre filtreleyin, favorilerinize kaydedin.
+          Konser, spor, tiyatro ve daha fazlasını keşfet; öne çıkanlara ve popüler şehirlere göz at.
         </p>
         <div class="flex flex-wrap gap-3">
           <UButton
-            to="/events"
             color="primary"
             variant="solid"
-            icon="i-lucide-ticket"
+            icon="i-lucide-sparkles"
             size="lg"
             class="transition-transform duration-200 hover:scale-105 active:scale-95 hover:brightness-110"
+            @click="scrollToSpotlight"
           >
-            Tüm etkinlikler
+            Öne çıkanlara göz at
           </UButton>
           <UButton
             to="/favorites"
@@ -195,7 +247,10 @@ const passStats = computed(() => [
     </section>
 
     <!-- Bu Hafta Öne Çıkanlar -->
-    <section class="space-y-6">
+    <section
+      id="spotlight"
+      class="scroll-mt-24 space-y-6"
+    >
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div class="space-y-1">
           <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
@@ -255,7 +310,7 @@ const passStats = computed(() => [
         class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
       >
         <FeaturedEventCard
-          v-for="event in featuredEvents.slice(0, 3)"
+          v-for="event in featuredEvents"
           :key="event.id"
           :event="event"
         />
@@ -309,7 +364,7 @@ const passStats = computed(() => [
           v-for="city in popularCities"
           :key="city.value"
           type="button"
-          class="ticket-stub inline-flex items-center gap-2 px-4 py-3 hover:border-[#E8432E] transition-all duration-200"
+          class="ticket-stub inline-flex items-center gap-2.5 px-5 py-3.5 hover:border-[#E8432E] transition-all duration-200"
           @click="goCity(city.value)"
         >
           <UIcon

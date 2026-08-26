@@ -38,6 +38,7 @@ export default defineCachedEventHandler(async (event): Promise<EventListResult> 
     const query = getQuery(event)
     return [
       'events',
+      'TR',
       query.keyword,
       query.city,
       query.classificationName,

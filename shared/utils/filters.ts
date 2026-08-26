@@ -5,28 +5,20 @@ import { nowTicketmasterDateTime, toTicketmasterDateTime } from './event'
 export const PAGE_SIZE = 12
 export const MAX_RESULTS = 1000
 export const ALL_FILTER_VALUE = 'all'
+export const DEFAULT_COUNTRY_CODE = 'TR'
 
 export const CITY_OPTIONS = [
   { label: 'Tüm şehirler', value: ALL_FILTER_VALUE },
-  { label: 'New York', value: 'New York' },
-  { label: 'Los Angeles', value: 'Los Angeles' },
-  { label: 'Chicago', value: 'Chicago' },
-  { label: 'Miami', value: 'Miami' },
-  { label: 'Las Vegas', value: 'Las Vegas' },
-  { label: 'San Francisco', value: 'San Francisco' },
-  { label: 'Boston', value: 'Boston' },
-  { label: 'Nashville', value: 'Nashville' },
-  { label: 'Austin', value: 'Austin' },
-  { label: 'London', value: 'London' },
-  { label: 'Manchester', value: 'Manchester' },
-  { label: 'Toronto', value: 'Toronto' },
-  { label: 'Vancouver', value: 'Vancouver' },
-  { label: 'Berlin', value: 'Berlin' },
-  { label: 'Amsterdam', value: 'Amsterdam' },
-  { label: 'Paris', value: 'Paris' },
-  { label: 'Dublin', value: 'Dublin' },
-  { label: 'Sydney', value: 'Sydney' },
-  { label: 'Melbourne', value: 'Melbourne' }
+  { label: 'İstanbul', value: 'Istanbul' },
+  { label: 'Ankara', value: 'Ankara' },
+  { label: 'İzmir', value: 'Izmir' },
+  { label: 'Antalya', value: 'Antalya' },
+  { label: 'Bursa', value: 'Bursa' },
+  { label: 'Muğla', value: 'Mugla' },
+  { label: 'Eskişehir', value: 'Eskisehir' },
+  { label: 'Gaziantep', value: 'Gaziantep' },
+  { label: 'Adana', value: 'Adana' },
+  { label: 'Konya', value: 'Konya' }
 ] as const
 
 export const DEFAULT_CATEGORY_OPTIONS = [
@@ -135,7 +127,8 @@ export function toTicketmasterQuery(params: EventSearchParams): Record<string, s
     size: String(size),
     page: String(Math.min(apiPage, maxPage)),
     sort: params.sort || 'date,asc',
-    includeTest: 'no'
+    includeTest: 'no',
+    countryCode: DEFAULT_COUNTRY_CODE
   }
 
   if (params.keyword) query.keyword = params.keyword

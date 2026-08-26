@@ -30,7 +30,7 @@ useSeoMeta({
         Etkinlikler
       </h1>
       <p class="text-neutral-500 dark:text-neutral-400">
-        Ticketmaster üzerindeki yaklaşan etkinlikleri keşfedin.
+        Türkiye’deki yaklaşan etkinlikleri keşfedin.
       </p>
     </div>
 
