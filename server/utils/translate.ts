@@ -1,4 +1,9 @@
-import { localizeTicketmasterText, looksMostlyEnglish } from '#shared/utils/localize'
+import {
+  localizeAddressLine,
+  localizeCountryName,
+  localizeTicketmasterText,
+  looksMostlyEnglish
+} from '#shared/utils/localize'
 
 const translationCache = new Map<string, string>()
 
@@ -26,6 +31,20 @@ function chunkText(text: string, max = 450): string[] {
   return chunks
 }
 
+/** Uzun mekan kurallarını madde / cümle bazında böl */
+function splitForTranslation(text: string): string[] {
+  const bulletParts = text
+    .split(/(?=\*\s)/)
+    .map(part => part.trim())
+    .filter(Boolean)
+
+  if (bulletParts.length > 1) {
+    return bulletParts.flatMap(part => chunkText(part, 450))
+  }
+
+  return chunkText(text, 450)
+}
+
 async function translateChunk(text: string): Promise<string> {
   const cached = translationCache.get(text)
   if (cached) {
@@ -41,7 +60,7 @@ async function translateChunk(text: string): Promise<string> {
         q: text,
         langpair: 'en|tr'
       },
-      timeout: 5000
+      timeout: 8000
     })
 
     const translated = result.responseData?.translatedText?.trim()
@@ -54,7 +73,7 @@ async function translateChunk(text: string): Promise<string> {
       return translated
     }
   } catch {
-    // sessizce sözlüğe düş
+    // sözlüğe düş
   }
 
   return localizeTicketmasterText(text) || text
@@ -62,9 +81,12 @@ async function translateChunk(text: string): Promise<string> {
 
 /**
  * İngilizce Ticketmaster metnini Türkçeye çevirir.
- * Önce sözlük, yetmezse MyMemory; hata olursa orijinal/sözlük sonucu.
+ * @param force İngilizce tespitini atla (mekan alanları için)
  */
-export async function translateToTurkish(text?: string | null): Promise<string | undefined> {
+export async function translateToTurkish(
+  text?: string | null,
+  options: { force?: boolean } = {}
+): Promise<string | undefined> {
   if (text == null) {
     return undefined
   }
@@ -75,43 +97,69 @@ export async function translateToTurkish(text?: string | null): Promise<string |
   }
 
   const phrased = localizeTicketmasterText(trimmed) || trimmed
-  if (!looksMostlyEnglish(phrased)) {
+  if (!options.force && !looksMostlyEnglish(phrased)) {
     return phrased
   }
 
-  const parts = chunkText(phrased)
+  // Sözlük sonrası hâlâ İngilizce ise (veya force) makine çevirisi dene
+  if (!looksMostlyEnglish(phrased) && !options.force) {
+    return phrased
+  }
+
+  // Force ama sözlük yeterli Türkçeleştirdiyse makineye gerek yok
+  if (options.force && !looksMostlyEnglish(phrased)) {
+    return phrased
+  }
+
+  const parts = splitForTranslation(phrased)
   const translatedParts = await Promise.all(parts.map(part => translateChunk(part)))
-  return translatedParts.join(' ').replace(/\s+/g, ' ').trim()
+  return translatedParts.join(' ').replace(/[ \t]{2,}/g, ' ').trim()
 }
 
 export async function localizeEventCopy<T extends {
   info?: string
   pleaseNote?: string
+  country?: string
   venueDetail?: {
+    address?: string
+    country?: string
     parkingDetail?: string
     generalRule?: string
     boxOffice?: string
   }
 }>(detail: T): Promise<T> {
-  const [info, pleaseNote, parkingDetail, generalRule, boxOffice] = await Promise.all([
+  const venue = detail.venueDetail
+
+  const [
+    info,
+    pleaseNote,
+    parkingDetail,
+    generalRule,
+    boxOffice,
+    address
+  ] = await Promise.all([
     translateToTurkish(detail.info),
     translateToTurkish(detail.pleaseNote),
-    translateToTurkish(detail.venueDetail?.parkingDetail),
-    translateToTurkish(detail.venueDetail?.generalRule),
-    translateToTurkish(detail.venueDetail?.boxOffice)
+    translateToTurkish(venue?.parkingDetail, { force: true }),
+    translateToTurkish(venue?.generalRule, { force: true }),
+    translateToTurkish(venue?.boxOffice, { force: true }),
+    translateToTurkish(venue?.address, { force: true })
   ])
 
   return {
     ...detail,
     info,
     pleaseNote,
-    venueDetail: detail.venueDetail
+    country: localizeCountryName(detail.country) || detail.country,
+    venueDetail: venue
       ? {
-          ...detail.venueDetail,
+          ...venue,
+          address: localizeAddressLine(address) || address,
+          country: localizeCountryName(venue.country) || venue.country,
           parkingDetail,
           generalRule,
           boxOffice
         }
-      : detail.venueDetail
+      : venue
   }
 }

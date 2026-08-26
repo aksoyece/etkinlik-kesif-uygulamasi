@@ -12,6 +12,7 @@ import type {
   TicketmasterVenue,
   VenueSummary
 } from '../types/event'
+import { localizeCountryName } from './localize'
 
 export const FAVORITES_STORAGE_KEY = 'etkinlik-favoriler'
 export const LAST_CITY_STORAGE_KEY = 'etkinlik-son-sehir'
@@ -185,13 +186,15 @@ export function mapVenue(venue?: TicketmasterVenue): VenueSummary | undefined {
     return undefined
   }
 
+  const country = localizeCountryName(venue.country?.name) || venue.country?.name
+
   const addressParts = [
     venue.address?.line1,
     venue.address?.line2,
     venue.city?.name,
     venue.state?.stateCode || venue.state?.name,
     venue.postalCode,
-    venue.country?.name
+    country
   ].filter(Boolean)
 
   return {
@@ -201,15 +204,13 @@ export function mapVenue(venue?: TicketmasterVenue): VenueSummary | undefined {
     address: addressParts.join(', '),
     city: venue.city?.name,
     state: venue.state?.name,
-    country: venue.country?.name,
+    country,
     postalCode: venue.postalCode,
     latitude: venue.location?.latitude,
     longitude: venue.location?.longitude,
-    parkingDetail: venue.parkingDetail || venue.parkingDetail,
-    generalRule: venue.generalInfo?.generalRule || venue.generalInfo?.generalRule,
+    parkingDetail: venue.parkingDetail,
+    generalRule: venue.generalInfo?.generalRule,
     boxOffice: venue.boxOfficeInfo?.openHoursDetail
-      || venue.boxOfficeInfo?.phoneNumberDetail
-      || venue.boxOfficeInfo?.openHoursDetail
       || venue.boxOfficeInfo?.phoneNumberDetail
   }
 }

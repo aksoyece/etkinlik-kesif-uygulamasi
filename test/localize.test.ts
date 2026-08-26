@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { localizeTicketmasterText, looksMostlyEnglish } from '../shared/utils/localize'
+import { localizeAddressLine, localizeTicketmasterText, looksMostlyEnglish } from '../shared/utils/localize'
 
 describe('yerelleştirme', () => {
   it('İngilizce metni tanır', () => {
@@ -20,5 +20,25 @@ describe('yerelleştirme', () => {
     const out = localizeTicketmasterText(input) || ''
     expect(out).toMatch(/en fazla 8 bilet/i)
     expect(out).toMatch(/iptal/i)
+  })
+
+  it('gişe ve ülke bilgisini Türkçeleştirir', () => {
+    const box = localizeTicketmasterText(
+      'Box Office will open 1 hour before doors on the day of an event (excluding Belfast Giants games)'
+    ) || ''
+    expect(box.toLowerCase()).toMatch(/gişe|kapı/)
+    expect(box.toLowerCase()).toMatch(/belfast giants/)
+
+    const address = localizeAddressLine('2 Queens Quay, Belfast, BT39QQ, Great Britain') || ''
+    expect(address).toContain('Birleşik Krallık')
+    expect(address).not.toMatch(/Great Britain/i)
+  })
+
+  it('mekan kurallarını Türkçeleştirir', () => {
+    const rules = localizeTicketmasterText(
+      '* Food and drink is NOT allowed to be brought into the venue. * The arena sells a variety of snack foods and confectionary and hot and cold drinks.'
+    ) || ''
+    expect(rules.toLowerCase()).toMatch(/yasak|yiyecek/)
+    expect(rules.toLowerCase()).toMatch(/arena|atıştırmalık|içecek/)
   })
 })
