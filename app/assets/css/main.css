@@ -42,6 +42,12 @@ body {
 .font-ticket {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   letter-spacing: 0.04em;
+  /* text-transform yok: tr locale’de i→İ olur (SPOTLİGHT, BİRMİNGHAM) */
+}
+
+/* İngilizce etiketler için Latin büyük harf (lang="en" ile birlikte kullan) */
+.ticket-eyebrow {
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 

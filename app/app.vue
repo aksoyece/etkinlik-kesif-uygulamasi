@@ -21,7 +21,10 @@ useHead({
 
     <UFooter :ui="{ container: 'max-w-7xl' }">
       <template #left>
-        <p class="font-ticket text-xs text-muted">
+        <p
+          lang="en"
+          class="font-ticket ticket-eyebrow text-xs text-muted"
+        >
           Evently • Admit One • {{ new Date().getFullYear() }}
         </p>
       </template>

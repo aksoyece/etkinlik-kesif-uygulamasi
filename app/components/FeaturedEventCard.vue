@@ -54,7 +54,10 @@ const categoryBadgeClass = computed(() => {
     <div class="ticket-tear-horizontal" />
 
     <div class="flex flex-1 flex-col gap-3 p-5 sm:p-6">
-      <p class="font-ticket text-[10px] text-neutral-400 dark:text-neutral-500 tracking-widest">
+      <p
+        lang="en"
+        class="font-ticket ticket-eyebrow text-[10px] text-neutral-400 dark:text-neutral-500"
+      >
         ADMIT ONE
       </p>
       <h3 class="font-ticket text-base sm:text-lg font-bold leading-snug text-[#1A1A1A] dark:text-[#F7F5F0] line-clamp-2 group-hover:text-[#E8432E] transition-colors">

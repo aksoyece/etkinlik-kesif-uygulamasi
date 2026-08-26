@@ -119,7 +119,10 @@ const passStats = computed(() => [
     <section class="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
       <div class="space-y-6">
         <div class="space-y-3">
-          <span class="font-ticket inline-flex w-fit rounded-full bg-neutral-200 dark:bg-neutral-800 px-2.5 py-1 text-[9px] text-neutral-600 dark:text-neutral-300 tracking-widest">
+          <span
+            lang="en"
+            class="font-ticket ticket-eyebrow inline-flex w-fit rounded-full bg-neutral-200 dark:bg-neutral-800 px-2.5 py-1 text-[9px] text-neutral-600 dark:text-neutral-300"
+          >
             ADMIT ONE • DISCOVER EVENTS
           </span>
           <h1 class="font-ticket text-4xl leading-tight text-[#1A1A1A] sm:text-5xl dark:text-[#F7F5F0]">
@@ -156,7 +159,10 @@ const passStats = computed(() => [
       <!-- Evently Pass -->
       <div class="ticket-stub flex-col p-6 sm:p-7 gap-4">
         <div class="space-y-1">
-          <p class="font-ticket text-[10px] text-neutral-400 dark:text-neutral-500 tracking-widest">
+          <p
+            lang="en"
+            class="font-ticket ticket-eyebrow text-[10px] text-neutral-400 dark:text-neutral-500"
+          >
             ADMIT ONE
           </p>
           <p class="font-ticket text-sm font-semibold text-neutral-900 dark:text-white">
@@ -184,7 +190,7 @@ const passStats = computed(() => [
 
     <!-- Sade arama -->
     <section class="ticket-stub flex-col p-5 sm:p-7 gap-4">
-      <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+      <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500">
         Hızlı arama
       </p>
       <div class="flex flex-col sm:flex-row gap-3">
@@ -215,7 +221,10 @@ const passStats = computed(() => [
     >
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div class="space-y-1">
-          <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+          <p
+            lang="en"
+            class="font-ticket ticket-eyebrow text-xs text-neutral-400 dark:text-neutral-500"
+          >
             Spotlight
           </p>
           <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
@@ -282,7 +291,10 @@ const passStats = computed(() => [
     <!-- Kategoriler -->
     <section class="space-y-5">
       <div class="space-y-1">
-        <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+        <p
+          lang="en"
+          class="font-ticket ticket-eyebrow text-xs text-neutral-400 dark:text-neutral-500"
+        >
           Browse
         </p>
         <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
@@ -314,7 +326,10 @@ const passStats = computed(() => [
     <!-- Popüler şehirler -->
     <section class="space-y-5">
       <div class="space-y-1">
-        <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+        <p
+          lang="en"
+          class="font-ticket ticket-eyebrow text-xs text-neutral-400 dark:text-neutral-500"
+        >
           Destinations
         </p>
         <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
@@ -343,7 +358,10 @@ const passStats = computed(() => [
     <!-- Alt CTA -->
     <section class="ticket-stub flex-col sm:flex-row items-center justify-between gap-4 p-6 sm:p-8">
       <div class="space-y-1 text-center sm:text-left">
-        <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+        <p
+          lang="en"
+          class="font-ticket ticket-eyebrow text-xs text-neutral-400 dark:text-neutral-500"
+        >
           Catalog
         </p>
         <h2 class="font-ticket text-xl text-neutral-900 dark:text-white">

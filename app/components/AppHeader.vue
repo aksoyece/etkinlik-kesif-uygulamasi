@@ -25,7 +25,10 @@ onMounted(() => {
         />
         <span class="flex flex-col leading-none gap-1">
           <span class="text-lg font-bold tracking-tight text-highlighted">Evently</span>
-          <span class="font-ticket hidden sm:inline-flex w-fit rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 text-[8px] text-neutral-600 dark:text-neutral-300 tracking-widest">
+          <span
+            lang="en"
+            class="font-ticket ticket-eyebrow hidden sm:inline-flex w-fit rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 text-[8px] text-neutral-600 dark:text-neutral-300"
+          >
             ADMIT ONE • DISCOVER EVENTS
           </span>
         </span>
