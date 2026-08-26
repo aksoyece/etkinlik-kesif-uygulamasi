@@ -257,7 +257,7 @@ const passStats = computed(() => [
             Spotlight
           </p>
           <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
-            Bu hafta öne çıkanlar
+            Öne çıkan etkinlikler
           </h2>
         </div>
         <UButton

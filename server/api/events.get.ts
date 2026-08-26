@@ -11,16 +11,19 @@ export default defineCachedEventHandler(async (event): Promise<EventListResult> 
   const page = Math.max(1, Number(query.page) || 1)
   const size = Math.min(20, Math.max(1, Number(query.size) || PAGE_SIZE))
 
-  const data = await ticketmasterFetch<TicketmasterEventSearchResponse>(event, '/events.json', toTicketmasterQuery({
-    keyword: readString(query.keyword),
-    city: readString(query.city),
-    classificationName: readString(query.classificationName),
-    startDate: readString(query.startDate),
-    endDate: readString(query.endDate),
-    sort: readString(query.sort),
-    page,
-    size
-  }))
+  const data = await ticketmasterFetch<TicketmasterEventSearchResponse>(event, '/events.json', {
+    ...toTicketmasterQuery({
+      keyword: readString(query.keyword),
+      city: readString(query.city),
+      classificationName: readString(query.classificationName),
+      startDate: readString(query.startDate),
+      endDate: readString(query.endDate),
+      sort: readString(query.sort),
+      page,
+      size
+    }),
+    countryCode: 'TR'
+  })
 
   const total = capTotalResults(data.page?.totalElements ?? 0, size)
 
@@ -38,6 +41,7 @@ export default defineCachedEventHandler(async (event): Promise<EventListResult> 
     const query = getQuery(event)
     return [
       'events',
+      'v2',
       'TR',
       query.keyword,
       query.city,
