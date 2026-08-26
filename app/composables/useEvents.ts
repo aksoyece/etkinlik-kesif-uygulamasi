@@ -5,9 +5,11 @@ import {
   eventFilterSchema,
   filtersFromQuery,
   filtersToQuery,
+  ALL_FILTER_VALUE,
   PAGE_SIZE,
   toSearchParams
 } from '#shared/utils/filters'
+import { writeLastCity } from '#shared/utils/event'
 
 export function useEvents(params: MaybeRefOrGetter<EventSearchParams>) {
   const query = computed(() => {
@@ -89,6 +91,10 @@ export function useEventExplorer() {
   })
 
   function apply(filters: EventFilterState, nextPage = 1) {
+    if (filters.city && filters.city !== ALL_FILTER_VALUE) {
+      writeLastCity(filters.city)
+    }
+
     return router.push({
       query: filtersToQuery(filters, nextPage)
     })

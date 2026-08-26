@@ -14,6 +14,29 @@ import type {
 } from '../types/event'
 
 export const FAVORITES_STORAGE_KEY = 'etkinlik-favoriler'
+export const LAST_CITY_STORAGE_KEY = 'etkinlik-son-sehir'
+
+export function readLastCity(): string | null {
+  if (!import.meta.client) {
+    return null
+  }
+  try {
+    return localStorage.getItem(LAST_CITY_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function writeLastCity(city: string) {
+  if (!import.meta.client || !city) {
+    return
+  }
+  try {
+    localStorage.setItem(LAST_CITY_STORAGE_KEY, city)
+  } catch {
+    // ignore
+  }
+}
 
 const TICKETMASTER_IMAGE_SIZES = [
   'TABLET_LANDSCAPE_LARGE_16_9',
