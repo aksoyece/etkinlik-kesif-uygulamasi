@@ -119,11 +119,8 @@ const passStats = computed(() => [
     <section class="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
       <div class="space-y-6">
         <div class="space-y-3">
-          <span
-            lang="en"
-            class="font-ticket ticket-eyebrow inline-flex w-fit rounded-full bg-neutral-200 dark:bg-neutral-800 px-2.5 py-1 text-[9px] text-neutral-600 dark:text-neutral-300"
-          >
-            ADMIT ONE • DISCOVER EVENTS
+          <span class="font-ticket inline-flex w-fit rounded-full bg-neutral-200 dark:bg-neutral-800 px-2.5 py-1 text-[9px] text-neutral-600 dark:text-neutral-300 tracking-widest">
+            ADMIT ONE • KEŞFET
           </span>
           <h1 class="font-ticket text-4xl leading-tight text-[#1A1A1A] sm:text-5xl dark:text-[#F7F5F0]">
             Yaklaşan etkinlikleri keşfet
@@ -166,7 +163,7 @@ const passStats = computed(() => [
             ADMIT ONE
           </p>
           <p class="font-ticket text-sm font-semibold text-neutral-900 dark:text-white">
-            Evently Pass
+            Evently Kartı
           </p>
         </div>
 
@@ -221,11 +218,8 @@ const passStats = computed(() => [
     >
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div class="space-y-1">
-          <p
-            lang="en"
-            class="font-ticket ticket-eyebrow text-xs text-neutral-400 dark:text-neutral-500"
-          >
-            Spotlight
+          <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+            Öne çıkan
           </p>
           <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
             Öne çıkan etkinlikler
@@ -291,11 +285,8 @@ const passStats = computed(() => [
     <!-- Kategoriler -->
     <section class="space-y-5">
       <div class="space-y-1">
-        <p
-          lang="en"
-          class="font-ticket ticket-eyebrow text-xs text-neutral-400 dark:text-neutral-500"
-        >
-          Browse
+        <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+          Göz at
         </p>
         <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
           Kategorilere göz at
@@ -326,11 +317,8 @@ const passStats = computed(() => [
     <!-- Popüler şehirler -->
     <section class="space-y-5">
       <div class="space-y-1">
-        <p
-          lang="en"
-          class="font-ticket ticket-eyebrow text-xs text-neutral-400 dark:text-neutral-500"
-        >
-          Destinations
+        <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+          Şehirler
         </p>
         <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
           Popüler şehirler
@@ -358,11 +346,8 @@ const passStats = computed(() => [
     <!-- Alt CTA -->
     <section class="ticket-stub flex-col sm:flex-row items-center justify-between gap-4 p-6 sm:p-8">
       <div class="space-y-1 text-center sm:text-left">
-        <p
-          lang="en"
-          class="font-ticket ticket-eyebrow text-xs text-neutral-400 dark:text-neutral-500"
-        >
-          Catalog
+        <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+          Katalog
         </p>
         <h2 class="font-ticket text-xl text-neutral-900 dark:text-white">
           Tüm etkinlikleri keşfet

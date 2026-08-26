@@ -28,11 +28,8 @@ function handleClearError() {
           </div>
         </div>
         <!-- Bilet Perforasyon Süslemesi -->
-        <div
-          lang="en"
-          class="absolute bottom-2 left-4 font-ticket ticket-eyebrow text-[10px] text-neutral-500"
-        >
-          TICKET STATUS: INVALID
+        <div class="absolute bottom-2 left-4 font-ticket text-[10px] text-neutral-500 tracking-widest">
+          BİLET DURUMU: GEÇERSİZ
         </div>
       </div>
 
@@ -41,11 +38,8 @@ function handleClearError() {
       <!-- İçerik Alanı -->
       <div class="p-8 flex flex-col items-center text-center gap-6">
         <div class="space-y-2">
-          <p
-            lang="en"
-            class="font-ticket ticket-eyebrow text-xs text-[#E8432E]"
-          >
-            EVENTLY • ERROR {{ error.statusCode }}
+          <p class="font-ticket text-xs text-[#E8432E] tracking-widest">
+            EVENTLY • HATA {{ error.statusCode }}
           </p>
           <h1 class="font-ticket text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-white leading-tight">
             {{ is404 ? 'GEÇERSİZ BİLET' : 'SİSTEM HATASI' }}
