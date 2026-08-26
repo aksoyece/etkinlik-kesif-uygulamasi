@@ -51,6 +51,37 @@ async function translateChunk(text: string): Promise<string> {
     return cached
   }
 
+  const phrased = localizeTicketmasterText(text) || text
+
+  // 1) Google Translate (ücretsiz gtx istemcisi)
+  try {
+    const raw = await $fetch<unknown>('https://translate.googleapis.com/translate_a/single', {
+      query: {
+        client: 'gtx',
+        sl: 'en',
+        tl: 'tr',
+        dt: 't',
+        q: text
+      },
+      timeout: 8000
+    })
+
+    if (Array.isArray(raw) && Array.isArray(raw[0])) {
+      const translated = raw[0]
+        .map((row: unknown) => (Array.isArray(row) ? String(row[0] ?? '') : ''))
+        .join('')
+        .trim()
+
+      if (translated && translated !== text) {
+        translationCache.set(text, translated)
+        return translated
+      }
+    }
+  } catch {
+    // MyMemory’ye düş
+  }
+
+  // 2) MyMemory yedek
   try {
     const result = await $fetch<{
       responseData?: { translatedText?: string }
@@ -76,7 +107,7 @@ async function translateChunk(text: string): Promise<string> {
     // sözlüğe düş
   }
 
-  return localizeTicketmasterText(text) || text
+  return phrased
 }
 
 /**

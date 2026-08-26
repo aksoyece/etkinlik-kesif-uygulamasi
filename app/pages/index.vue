@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { CITY_OPTIONS } from '#shared/utils/filters'
 import { pickDistinctFeatured } from '#shared/utils/featured'
+import { formatUiNumber } from '#shared/utils/labels'
 import { ACTIVE_MARKET } from '#shared/utils/market'
 import { readLastCity, writeLastCity } from '#shared/utils/event'
 
@@ -37,8 +38,8 @@ function cityLabel(value: string | null) {
 }
 
 function formatWeekCount(total: number) {
-  if (total >= 1000) return `${(1000).toLocaleString(ACTIVE_MARKET.locale)}+`
-  return total.toLocaleString(ACTIVE_MARKET.locale)
+  if (total >= 1000) return `${formatUiNumber(1000)}+`
+  return formatUiNumber(total)
 }
 
 const { events: featuredPool, pending: featuredPending, error: featuredError, refresh: refreshFeatured } = useEvents({

@@ -241,7 +241,7 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
     localDate: event.dates?.start?.localDate,
     localTime: event.dates?.start?.localTime,
     city: venue?.city?.name,
-    country: venue?.country?.name,
+    country: localizeCountryName(venue?.country?.name) || venue?.country?.name,
     venue: venue?.name,
     venueId: venue?.id,
     category: classification?.segment?.name,

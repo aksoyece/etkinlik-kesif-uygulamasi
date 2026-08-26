@@ -20,6 +20,7 @@ export const DEFAULT_CATEGORY_OPTIONS = [
   { label: 'Müzik', value: 'Music' },
   { label: 'Spor', value: 'Sports' },
   { label: 'Sanat ve Tiyatro', value: 'Arts & Theatre' },
+  { label: 'Aile', value: 'Family' },
   { label: 'Film', value: 'Film' },
   { label: 'Diğer', value: 'Miscellaneous' }
 ]

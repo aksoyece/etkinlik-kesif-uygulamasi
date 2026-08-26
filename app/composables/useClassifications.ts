@@ -1,5 +1,6 @@
 import type { ClassificationOption } from '#shared/types/event'
 import { ALL_FILTER_VALUE, DEFAULT_CATEGORY_OPTIONS } from '#shared/utils/filters'
+import { translateCategory } from '#shared/utils/labels'
 
 export function useClassifications() {
   const { data, pending, error } = useAsyncData(
@@ -32,17 +33,4 @@ export function useClassifications() {
     pending,
     error
   }
-}
-
-function translateCategory(name: string): string {
-  const labels: Record<string, string> = {
-    'Music': 'Müzik',
-    'Sports': 'Spor',
-    'Arts & Theatre': 'Sanat ve Tiyatro',
-    'Film': 'Film',
-    'Miscellaneous': 'Diğer',
-    'Undefined': 'Diğer'
-  }
-
-  return labels[name] || name
 }

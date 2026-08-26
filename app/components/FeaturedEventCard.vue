@@ -1,28 +1,18 @@
 <script setup lang="ts">
 import type { EventSummary } from '#shared/types/event'
+import { translateCategory } from '#shared/utils/labels'
 
 const props = defineProps<{
   event: EventSummary
 }>()
 
-const categoryLabel = computed(() => {
-  const cat = props.event.category
-  if (!cat || cat.toUpperCase() === 'UNDEFINED') return 'Genel'
-  const upper = cat.toUpperCase()
-  if (upper.includes('MUSIC')) return 'Müzik'
-  if (upper.includes('SPORTS')) return 'Spor'
-  if (upper.includes('ARTS') || upper.includes('THEATRE')) return 'Sanat & Tiyatro'
-  if (upper.includes('FAMILY')) return 'Aile'
-  if (upper.includes('FILM')) return 'Film'
-  if (upper.includes('MISCELLANEOUS')) return 'Diğer'
-  return cat
-})
+const categoryLabel = computed(() => translateCategory(props.event.category))
 
 const categoryBadgeClass = computed(() => {
   const cat = (props.event.category || '').toUpperCase()
   if (cat.includes('MUSIC')) return 'bg-amber-500 text-white'
   if (cat.includes('SPORTS')) return 'bg-blue-600 text-white'
-  if (cat.includes('ARTS') || cat.includes('THEATRE')) return 'bg-purple-600 text-white'
+  if (cat.includes('ARTS') || cat.includes('THEATRE') || cat.includes('THEATER')) return 'bg-purple-600 text-white'
   if (cat.includes('FAMILY')) return 'bg-emerald-600 text-white'
   if (cat.includes('FILM')) return 'bg-[#E8432E] text-white'
   return 'bg-neutral-500 text-white'

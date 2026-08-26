@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { mapsUrl, toFavoriteEvent, uniqueGalleryImages } from '#shared/utils/event'
 import { buildGoogleCalendarUrl, buildIcsContent } from '#shared/utils/calendar'
+import { translateCategory, translateGenre, translateStatus } from '#shared/utils/labels'
+import { localizeTicketmasterText } from '#shared/utils/localize'
 
 const route = useRoute()
 const requestUrl = useRequestURL()
@@ -17,6 +19,16 @@ const mapLink = computed(() => mapsUrl(venueInfo.value))
 const galleryImages = computed(() => uniqueGalleryImages(event.value?.images ?? []))
 const googleCalendarUrl = computed(() => event.value ? buildGoogleCalendarUrl(event.value) : undefined)
 const pageUrl = computed(() => `${requestUrl.origin}${route.fullPath}`)
+
+const categoryLabel = computed(() => translateCategory(event.value?.category))
+const genreLabel = computed(() => translateGenre(event.value?.genre))
+const statusText = computed(() => translateStatus(event.value?.status))
+const infoText = computed(() => localizeTicketmasterText(event.value?.info) || event.value?.info)
+const pleaseNoteText = computed(() => localizeTicketmasterText(event.value?.pleaseNote) || event.value?.pleaseNote)
+const venueBoxOffice = computed(() => localizeTicketmasterText(venueInfo.value?.boxOffice) || venueInfo.value?.boxOffice)
+const venueParking = computed(() => localizeTicketmasterText(venueInfo.value?.parkingDetail) || venueInfo.value?.parkingDetail)
+const venueRules = computed(() => localizeTicketmasterText(venueInfo.value?.generalRule) || venueInfo.value?.generalRule)
+const venueAddress = computed(() => venueInfo.value?.address)
 
 const selectedImage = ref<string | null>(null)
 const galleryOpen = computed({
@@ -149,14 +161,6 @@ function toggleFavorite() {
   })
 }
 
-const statusLabel: Record<string, string> = {
-  onSale: 'Satışta',
-  offSale: 'Satış dışı',
-  cancelled: 'İptal edildi',
-  postponed: 'Ertelendi',
-  rescheduled: 'Yeniden planlandı'
-}
-
 const categoryBadgeClass = computed(() => {
   if (!event.value) return 'bg-neutral-600 text-white'
   const cat = (event.value.category || '').toUpperCase()
@@ -286,7 +290,7 @@ const barcodeStyle = computed(() => {
                 class="font-ticket absolute bottom-4 left-4 rounded px-2.5 py-1 text-xs font-bold shadow-md"
                 :class="categoryBadgeClass"
               >
-                {{ event.category || 'Etkinlik' }}
+                {{ categoryLabel }}
               </span>
             </div>
 
@@ -295,20 +299,20 @@ const barcodeStyle = computed(() => {
             <div class="p-6 sm:p-8 space-y-6">
               <div class="flex flex-wrap items-center gap-2">
                 <UBadge
-                  v-if="event.genre"
+                  v-if="genreLabel && genreLabel !== 'Genel'"
                   color="neutral"
                   variant="subtle"
                   class="font-ticket"
                 >
-                  {{ event.genre }}
+                  {{ genreLabel }}
                 </UBadge>
                 <UBadge
-                  v-if="event.status"
-                  :color="event.status === 'cancelled' ? 'error' : 'success'"
+                  v-if="statusText"
+                  :color="event.status === 'cancelled' || event.status === 'canceled' ? 'error' : 'success'"
                   variant="subtle"
                   class="font-ticket"
                 >
-                  {{ statusLabel[event.status] || event.status }}
+                  {{ statusText }}
                 </UBadge>
               </div>
 
@@ -436,24 +440,23 @@ const barcodeStyle = computed(() => {
 
           <!-- Etkinlik Açıklaması -->
           <section
-            v-if="event.info"
+            v-if="infoText"
             class="ticket-stub flex-col p-6 sm:p-8 gap-4"
           >
             <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white border-b border-dashed border-neutral-200 dark:border-neutral-800 pb-2">
               Etkinlik bilgisi
             </h2>
             <p class="whitespace-pre-line text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
-              {{ event.info }}
+              {{ infoText }}
             </p>
           </section>
 
-          <!-- Lütfen Dikkat Uyarısı -->
           <UAlert
-            v-if="event.pleaseNote"
+            v-if="pleaseNoteText"
             color="warning"
             icon="i-lucide-info"
             title="Lütfen dikkat"
-            :description="event.pleaseNote"
+            :description="pleaseNoteText"
             class="border-amber-500/30 dark:border-amber-500/20"
           />
 
@@ -486,7 +489,7 @@ const barcodeStyle = computed(() => {
                     v-if="artist.genre"
                     class="font-ticket text-[10px] text-neutral-400 mt-0.5 truncate"
                   >
-                    {{ artist.genre }}
+                    {{ translateGenre(artist.genre) }}
                   </p>
                   <UButton
                     v-if="artist.url"
@@ -523,44 +526,44 @@ const barcodeStyle = computed(() => {
 
               <div class="space-y-2 text-sm text-neutral-600 dark:text-neutral-300">
                 <p
-                  v-if="venueInfo.address"
+                  v-if="venueAddress"
                   class="flex items-start gap-2"
                 >
                   <UIcon
                     name="i-lucide-map-pin"
                     class="size-4 mt-0.5 text-primary flex-none"
                   />
-                  <span>{{ venueInfo.address }}</span>
+                  <span>{{ venueAddress }}</span>
                 </p>
                 <p
-                  v-if="venueInfo.boxOffice"
+                  v-if="venueBoxOffice"
                   class="flex items-start gap-2"
                 >
                   <UIcon
                     name="i-lucide-ticket"
                     class="size-4 mt-0.5 text-primary flex-none"
                   />
-                  <span>Gişe: {{ venueInfo.boxOffice }}</span>
+                  <span>Gişe: {{ venueBoxOffice }}</span>
                 </p>
                 <p
-                  v-if="venueInfo.parkingDetail"
+                  v-if="venueParking"
                   class="flex items-start gap-2"
                 >
                   <UIcon
                     name="i-lucide-car"
                     class="size-4 mt-0.5 text-primary flex-none"
                   />
-                  <span>Otopark: {{ venueInfo.parkingDetail }}</span>
+                  <span>Otopark: {{ venueParking }}</span>
                 </p>
                 <p
-                  v-if="venueInfo.generalRule"
+                  v-if="venueRules"
                   class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500 italic"
                 >
                   <UIcon
                     name="i-lucide-info"
                     class="size-4 mt-0.5 text-neutral-400 flex-none"
                   />
-                  <span>{{ venueInfo.generalRule }}</span>
+                  <span class="whitespace-pre-line">{{ venueRules }}</span>
                 </p>
               </div>
 
