@@ -1,7 +1,8 @@
 import {
+  applyKnownPhrases,
+  applyLocaleFixes,
   localizeAddressLine,
   localizeCountryName,
-  localizeTicketmasterText,
   looksMostlyEnglish
 } from '#shared/utils/localize'
 
@@ -31,10 +32,9 @@ function chunkText(text: string, max = 450): string[] {
   return chunks
 }
 
-/** Uzun mekan kurallarını madde / cümle bazında böl */
 function splitForTranslation(text: string): string[] {
   const bulletParts = text
-    .split(/(?=\*\s)/)
+    .split(/(?=\*\s)|(?<=\.)\s+(?=[A-Z])/)
     .map(part => part.trim())
     .filter(Boolean)
 
@@ -51,9 +51,7 @@ async function translateChunk(text: string): Promise<string> {
     return cached
   }
 
-  const phrased = localizeTicketmasterText(text) || text
-
-  // 1) Google Translate (ücretsiz gtx istemcisi)
+  // Google Translate
   try {
     const raw = await $fetch<unknown>('https://translate.googleapis.com/translate_a/single', {
       query: {
@@ -63,7 +61,7 @@ async function translateChunk(text: string): Promise<string> {
         dt: 't',
         q: text
       },
-      timeout: 8000
+      timeout: 10000
     })
 
     if (Array.isArray(raw) && Array.isArray(raw[0])) {
@@ -72,16 +70,21 @@ async function translateChunk(text: string): Promise<string> {
         .join('')
         .trim()
 
-      if (translated && translated !== text) {
+      if (translated && translated !== text && !looksMostlyEnglish(translated)) {
         translationCache.set(text, translated)
         return translated
       }
+      // Bazen Google İngilizce bırakır; yine de farklıysa kabul et ve post-fix uygula
+      if (translated && translated !== text) {
+        const fixed = applyLocaleFixes(translated)
+        translationCache.set(text, fixed)
+        return fixed
+      }
     }
   } catch {
-    // MyMemory’ye düş
+    // MyMemory
   }
 
-  // 2) MyMemory yedek
   try {
     const result = await $fetch<{
       responseData?: { translatedText?: string }
@@ -91,7 +94,7 @@ async function translateChunk(text: string): Promise<string> {
         q: text,
         langpair: 'en|tr'
       },
-      timeout: 8000
+      timeout: 10000
     })
 
     const translated = result.responseData?.translatedText?.trim()
@@ -99,24 +102,26 @@ async function translateChunk(text: string): Promise<string> {
       translated
       && result.responseStatus === 200
       && !/MYMEMORY WARNING/i.test(translated)
+      && translated !== text
     ) {
-      translationCache.set(text, translated)
-      return translated
+      const fixed = applyLocaleFixes(translated)
+      translationCache.set(text, fixed)
+      return fixed
     }
   } catch {
-    // sözlüğe düş
+    // kalıp yedek
   }
 
-  return phrased
+  return applyLocaleFixes(applyKnownPhrases(text))
 }
 
 /**
- * İngilizce Ticketmaster metnini Türkçeye çevirir.
- * Sözlük sonucu yeterince Türkçe ise makine çevirisine gitmez (İngilizce override engellenir).
+ * İngilizce metni tam çevirir. Önce makine çevirisi, sonra gün/saat/ülke düzeltmesi.
+ * Kelime kelime sözlük uygulanmaz.
  */
 export async function translateToTurkish(
   text?: string | null,
-  options: { force?: boolean } = {}
+  _options: { force?: boolean } = {}
 ): Promise<string | undefined> {
   if (text == null) {
     return undefined
@@ -127,32 +132,17 @@ export async function translateToTurkish(
     return text
   }
 
-  const phrased = localizeTicketmasterText(trimmed) || trimmed
-
-  // Sözlük işini bitirdiyse olduğu gibi dön
-  if (!looksMostlyEnglish(phrased)) {
-    return phrased
+  // Zaten Türkçe
+  if (!looksMostlyEnglish(trimmed)) {
+    return applyLocaleFixes(trimmed)
   }
 
-  if (!options.force && !looksMostlyEnglish(trimmed)) {
-    return phrased
-  }
-
-  const parts = splitForTranslation(phrased)
-  const translatedParts = await Promise.all(parts.map(async (part) => {
-    const machine = await translateChunk(part)
-    // Makine hâlâ İngilizceyse sözlük sonucunu koru
-    if (looksMostlyEnglish(machine) && !looksMostlyEnglish(localizeTicketmasterText(part) || '')) {
-      return localizeTicketmasterText(part) || part
-    }
-    if (looksMostlyEnglish(machine)) {
-      return localizeTicketmasterText(part) || machine
-    }
-    return machine
-  }))
-
+  // Orijinal İngilizceyi parçala ve çevir (önceden bozmadan)
+  const parts = splitForTranslation(trimmed)
+  const translatedParts = await Promise.all(parts.map(part => translateChunk(part)))
   const joined = translatedParts.join(' ').replace(/[ \t]{2,}/g, ' ').trim()
-  return looksMostlyEnglish(joined) ? phrased : joined
+
+  return applyLocaleFixes(joined)
 }
 
 export async function localizeVenueCopy<T extends {
@@ -166,12 +156,12 @@ export async function localizeVenueCopy<T extends {
     translateToTurkish(venue.parkingDetail, { force: true }),
     translateToTurkish(venue.generalRule, { force: true }),
     translateToTurkish(venue.boxOffice, { force: true }),
-    translateToTurkish(venue.address, { force: true })
+    Promise.resolve(localizeAddressLine(venue.address) || venue.address)
   ])
 
   return {
     ...venue,
-    address: localizeAddressLine(address) || address,
+    address,
     country: localizeCountryName(venue.country) || venue.country,
     parkingDetail,
     generalRule,
@@ -192,8 +182,8 @@ export async function localizeEventCopy<T extends {
   }
 }>(detail: T): Promise<T> {
   const [info, pleaseNote] = await Promise.all([
-    translateToTurkish(detail.info),
-    translateToTurkish(detail.pleaseNote)
+    translateToTurkish(detail.info, { force: true }),
+    translateToTurkish(detail.pleaseNote, { force: true })
   ])
 
   const venueDetail = detail.venueDetail

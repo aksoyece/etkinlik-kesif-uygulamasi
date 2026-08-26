@@ -12,7 +12,7 @@ import type {
   TicketmasterVenue,
   VenueSummary
 } from '../types/event'
-import { localizeAddressLine, localizeCountryName, localizeTicketmasterText } from './localize'
+import { localizeAddressLine, localizeCountryName } from './localize'
 
 export const FAVORITES_STORAGE_KEY = 'etkinlik-favoriler'
 export const LAST_CITY_STORAGE_KEY = 'etkinlik-son-sehir'
@@ -208,11 +208,10 @@ export function mapVenue(venue?: TicketmasterVenue): VenueSummary | undefined {
     postalCode: venue.postalCode,
     latitude: venue.location?.latitude,
     longitude: venue.location?.longitude,
-    parkingDetail: localizeTicketmasterText(venue.parkingDetail),
-    generalRule: localizeTicketmasterText(venue.generalInfo?.generalRule),
-    boxOffice: localizeTicketmasterText(
-      venue.boxOfficeInfo?.openHoursDetail || venue.boxOfficeInfo?.phoneNumberDetail
-    )
+    parkingDetail: venue.parkingDetail,
+    generalRule: venue.generalInfo?.generalRule,
+    boxOffice: venue.boxOfficeInfo?.openHoursDetail
+      || venue.boxOfficeInfo?.phoneNumberDetail
   }
 }
 
@@ -274,8 +273,8 @@ export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetai
 
   return {
     ...summary,
-    info: localizeTicketmasterText(event.info || event.description),
-    pleaseNote: localizeTicketmasterText(event.pleaseNote),
+    info: event.info || event.description,
+    pleaseNote: event.pleaseNote,
     ticketUrl: event.url,
     status: event.dates?.status?.code,
     seatmap: event.seatmap?.staticUrl,

@@ -2,7 +2,7 @@
 import { mapsUrl, toFavoriteEvent, uniqueGalleryImages } from '#shared/utils/event'
 import { buildGoogleCalendarUrl, buildIcsContent } from '#shared/utils/calendar'
 import { translateCategory, translateGenre, translateStatus } from '#shared/utils/labels'
-import { localizeTicketmasterText } from '#shared/utils/localize'
+import { applyLocaleFixes } from '#shared/utils/localize'
 
 const route = useRoute()
 const requestUrl = useRequestURL()
@@ -23,11 +23,12 @@ const pageUrl = computed(() => `${requestUrl.origin}${route.fullPath}`)
 const categoryLabel = computed(() => translateCategory(event.value?.category))
 const genreLabel = computed(() => translateGenre(event.value?.genre))
 const statusText = computed(() => translateStatus(event.value?.status))
-const infoText = computed(() => localizeTicketmasterText(event.value?.info) || event.value?.info)
-const pleaseNoteText = computed(() => localizeTicketmasterText(event.value?.pleaseNote) || event.value?.pleaseNote)
-const venueBoxOffice = computed(() => localizeTicketmasterText(venueInfo.value?.boxOffice) || venueInfo.value?.boxOffice)
-const venueParking = computed(() => localizeTicketmasterText(venueInfo.value?.parkingDetail) || venueInfo.value?.parkingDetail)
-const venueRules = computed(() => localizeTicketmasterText(venueInfo.value?.generalRule) || venueInfo.value?.generalRule)
+/** Sunucu zaten çevirir; istemci yalnızca gün/saat güvenli düzeltmesi yapar */
+const infoText = computed(() => event.value?.info ? applyLocaleFixes(event.value.info) : undefined)
+const pleaseNoteText = computed(() => event.value?.pleaseNote ? applyLocaleFixes(event.value.pleaseNote) : undefined)
+const venueBoxOffice = computed(() => venueInfo.value?.boxOffice ? applyLocaleFixes(venueInfo.value.boxOffice) : undefined)
+const venueParking = computed(() => venueInfo.value?.parkingDetail ? applyLocaleFixes(venueInfo.value.parkingDetail) : undefined)
+const venueRules = computed(() => venueInfo.value?.generalRule ? applyLocaleFixes(venueInfo.value.generalRule) : undefined)
 const venueAddress = computed(() => venueInfo.value?.address)
 
 const selectedImage = ref<string | null>(null)

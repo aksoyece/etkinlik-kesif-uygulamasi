@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { localizeAddressLine, localizeTicketmasterText, looksMostlyEnglish } from '../shared/utils/localize'
+import {
+  applyLocaleFixes,
+  localizeAddressLine,
+  localizeTicketmasterText,
+  looksMostlyEnglish
+} from '../shared/utils/localize'
 
 describe('yerelleştirme', () => {
   it('İngilizce metni tanır', () => {
@@ -7,41 +12,40 @@ describe('yerelleştirme', () => {
     expect(looksMostlyEnglish('Kişi başına en fazla 8 bilet geçerlidir.')).toBe(false)
   })
 
-  it('hediye kartı uyarısını Türkçeleştirir', () => {
-    const input = 'Please note: Giftcards are only valid against tickets brough from Ticketmaster and are not redeemable in the gift shop or cafe.'
+  it('uzun İngilizce paragrafta kelime kelime bozmaz', () => {
+    const input = 'Step into the Arena! For the first time ever, GladFans across the United Kingdom will be able to put their speed. Could you be the last person Standing in an epic bout of Duel?'
     const out = localizeTicketmasterText(input) || ''
-    expect(out.toLowerCase()).toContain('lütfen dikkat')
-    expect(out.toLowerCase()).toContain('hediye')
-    expect(out.toLowerCase()).toContain('ticketmaster')
+    // Kelime değiştirilmemiş olmalı
+    expect(out).toMatch(/Standing/)
+    expect(out).not.toMatch(/Ayakta/)
+    // Ülke adı adres dışı uzun metinde de country fix uygulanabilir — United Kingdom → Birleşik Krallık applyLocaleFixes içinde
+    // Bu OK; asıl kritik Standing bozulmaması
   })
 
-  it('bilet limiti uyarısını Türkçeleştirir', () => {
-    const input = 'A max of 8 tickets per person and per household applies. Tickets in excess of 8 will be cancelled.'
-    const out = localizeTicketmasterText(input) || ''
-    expect(out).toMatch(/en fazla 8 bilet/i)
-    expect(out).toMatch(/iptal/i)
+  it('gün ve am/pm düzeltir', () => {
+    const out = applyLocaleFixes('9:30am - 6:00pm Monday - Sunday')
+    expect(out).toMatch(/09:30/)
+    expect(out).toMatch(/18:00/)
+    expect(out.toLowerCase()).toMatch(/pazartesi/)
+    expect(out.toLowerCase()).toMatch(/pazar/)
+    expect(out.toLowerCase()).not.toMatch(/\bam\b|\bpm\b/)
   })
 
-  it('O2 Belfast gişe / otopark / kuralları Türkçeleştirir', () => {
-    const box = localizeTicketmasterText(
-      'Box Office will open 1 hour before doors on the day of an event (excluding Belfast Giants games)'
+  it('kısa gişe kalıbını çevirir', () => {
+    const out = localizeTicketmasterText(
+      'Monday - Saturday 10:00 - 18:00 and occasionally on Sunday.'
     ) || ''
-    expect(box.toLowerCase()).toMatch(/gişe|kapı|etkinlik/)
-    expect(box.toLowerCase()).not.toMatch(/box office will open/)
+    expect(out.toLowerCase()).toMatch(/pazartesi/)
+    expect(out.toLowerCase()).toMatch(/pazar/)
+  })
 
-    const park = localizeTicketmasterText(
-      '1500 spaces are available, those closest to The O2 Belfast are reserved for vehicles showing the disabled driver badge.'
-    ) || ''
-    expect(park.toLowerCase()).toMatch(/araç|otopark|yer|engelli/)
-    expect(park.toLowerCase()).not.toMatch(/spaces are available/)
-
-    const rules = localizeTicketmasterText(
-      '* Food and drink is NOT allowed to be brought into the venue. * The arena sells a variety of snack foods and confectionary and hot and cold drinks. * Food may be taken into the arena while patrons enjoy the game/event. * There is a fully licensed bar and the food outlets have a limited/occasional license depending on the nature of the event. * Please follow the link below for venue\'s full T&C\'s https://theo2belfast.com/your-visit/faqs'
-    ) || ''
-    expect(rules.toLowerCase()).toMatch(/yasak|yiyecek/)
-    expect(rules.toLowerCase()).not.toMatch(/food and drink is not allowed/)
-
+  it('adres ülkesini Türkçeleştirir', () => {
     const address = localizeAddressLine('2 Queens Quay, Belfast, BT39QQ, Great Britain') || ''
     expect(address).toContain('Birleşik Krallık')
+  })
+
+  it('kısa yasak cümlesini çevirir', () => {
+    const out = localizeTicketmasterText('No video cameras or recording devices.') || ''
+    expect(out.toLowerCase()).toMatch(/kamera|kayıt|yasak/)
   })
 })
