@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { parseDate } from '@internationalized/date'
 import type { DateValue } from '@internationalized/date'
+import type { DateRange } from 'reka-ui'
 import { CITY_OPTIONS, SORT_OPTIONS } from '#shared/utils/filters'
 
 const state = defineModel<{
@@ -25,32 +26,48 @@ const { items: categoryItems, pending: classificationsPending } = useClassificat
 const cityItems = CITY_OPTIONS.map(o => ({ label: o.label, value: o.value as string }))
 const sortItems = SORT_OPTIONS.map(o => ({ label: o.label, value: o.value as string }))
 
-type DateRange = { start: DateValue, end: DateValue }
-
-function parseSafe(value: string): DateValue | null {
+function parseSafe(value: string): DateValue | undefined {
   if (!value) {
-    return null
+    return undefined
   }
   try {
     return parseDate(value)
   } catch {
-    return null
+    return undefined
   }
 }
 
-const dateRange = computed<DateRange | null>({
-  get: () => {
-    const start = parseSafe(state.value.startDate)
-    const end = parseSafe(state.value.endDate) || start
-    if (!start || !end) {
-      return null
+/** Aralık seçimi: end ilk tıklamada undefined kalmalı (start===end yapılırsa 2. gün seçilemez) */
+const dateRange = shallowRef<DateRange | null>(null)
+const datePopoverOpen = ref(false)
+
+watch(
+  () => [state.value.startDate, state.value.endDate] as const,
+  ([startStr, endStr]) => {
+    const start = parseSafe(startStr)
+    const end = parseSafe(endStr)
+    const nextStart = dateRange.value?.start?.toString() ?? ''
+    const nextEnd = dateRange.value?.end?.toString() ?? ''
+    if (nextStart === (start?.toString() ?? '') && nextEnd === (end?.toString() ?? '')) {
+      return
     }
-    return { start, end }
+    if (!start && !end) {
+      dateRange.value = null
+      return
+    }
+    dateRange.value = { start, end }
   },
-  set: (val) => {
-    state.value.startDate = val?.start ? val.start.toString() : ''
-    state.value.endDate = val?.end ? val.end.toString() : ''
+  { immediate: true }
+)
+
+watch(dateRange, (val) => {
+  const startStr = val?.start?.toString() ?? ''
+  const endStr = val?.end?.toString() ?? ''
+  if (state.value.startDate === startStr && state.value.endDate === endStr) {
+    return
   }
+  state.value.startDate = startStr
+  state.value.endDate = endStr
 })
 
 const months = [
@@ -63,10 +80,14 @@ function formatCalendarDate(date: DateValue) {
 }
 
 const dateRangeLabel = computed(() => {
-  if (!dateRange.value) {
-    return 'Tarih seçin'
+  const start = dateRange.value?.start
+  const end = dateRange.value?.end
+  if (!start) {
+    return 'Başlangıç – bitiş seçin'
   }
-  const { start, end } = dateRange.value
+  if (!end) {
+    return `${formatCalendarDate(start)} – bitiş seçin`
+  }
   if (start.toString() === end.toString()) {
     return formatCalendarDate(start)
   }
@@ -75,6 +96,15 @@ const dateRangeLabel = computed(() => {
 
 function clearDateRange() {
   dateRange.value = null
+  state.value.startDate = ''
+  state.value.endDate = ''
+}
+
+function onRangeComplete(value: DateRange) {
+  if (value.start && value.end) {
+    dateRange.value = value
+    datePopoverOpen.value = false
+  }
 }
 </script>
 
@@ -109,7 +139,10 @@ function clearDateRange() {
       name="startDate"
       label="Tarih aralığı"
     >
-      <UPopover class="w-full">
+      <UPopover
+        v-model:open="datePopoverOpen"
+        class="w-full"
+      >
         <UButton
           color="neutral"
           variant="outline"
@@ -124,7 +157,7 @@ function clearDateRange() {
           </span>
           <div class="flex items-center gap-1 flex-none">
             <UButton
-              v-if="dateRange"
+              v-if="dateRange?.start"
               icon="i-lucide-x"
               size="xs"
               color="neutral"
@@ -140,12 +173,17 @@ function clearDateRange() {
         </UButton>
 
         <template #content>
-          <UCalendar
-            v-model="dateRange"
-            range
-            :number-of-months="1"
-            class="p-2"
-          />
+          <div class="p-2 space-y-2">
+            <p class="px-1 text-xs text-neutral-500 dark:text-neutral-400">
+              Önce başlangıç, sonra bitiş gününü seçin.
+            </p>
+            <UCalendar
+              v-model="dateRange"
+              range
+              :number-of-months="2"
+              @update:valid-model-value="onRangeComplete"
+            />
+          </div>
         </template>
       </UPopover>
     </UFormField>
