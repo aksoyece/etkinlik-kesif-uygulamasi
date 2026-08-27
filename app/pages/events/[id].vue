@@ -22,7 +22,24 @@ const { venue } = useVenue(
 )
 
 const favorited = computed(() => event.value ? favorites.isFavorite(event.value.id) : false)
-const venueInfo = computed(() => event.value?.venueDetail || venue.value || undefined)
+/** Önizleme / liste verisinden de mekan adı hemen görünsün */
+const venueInfo = computed(() => {
+  if (event.value?.venueDetail) {
+    return event.value.venueDetail
+  }
+  if (venue.value) {
+    return venue.value
+  }
+  if (event.value?.venue) {
+    return {
+      name: event.value.venue,
+      city: event.value.city,
+      country: event.value.country,
+      address: [event.value.city, event.value.country].filter(Boolean).join(', ') || undefined
+    }
+  }
+  return undefined
+})
 const mapLink = computed(() => mapsUrl(venueInfo.value))
 const galleryImages = computed(() => uniqueGalleryImages(event.value?.images ?? []))
 const googleCalendarUrl = computed(() => event.value ? buildGoogleCalendarUrl(event.value) : undefined)
@@ -649,76 +666,66 @@ const barcodeStyle = computed(() => {
                   />
                   <span>{{ venueAddress }}</span>
                 </p>
-                <template v-if="belowFoldReady">
-                  <p
-                    v-if="venueBoxOffice"
-                    class="flex items-start gap-2"
-                  >
-                    <UIcon
-                      name="i-lucide-ticket"
-                      class="size-4 mt-0.5 text-primary flex-none"
-                    />
-                    <span class="whitespace-pre-line">Gişe: {{ venueBoxOffice }}</span>
-                  </p>
-                  <p
-                    v-if="venueBoxOfficePhone"
-                    class="flex items-start gap-2"
-                  >
-                    <UIcon
-                      name="i-lucide-phone"
-                      class="size-4 mt-0.5 text-primary flex-none"
-                    />
-                    <span>{{ venueBoxOfficePhone }}</span>
-                  </p>
-                  <p
-                    v-if="venueParking"
-                    class="flex items-start gap-2"
-                  >
-                    <UIcon
-                      name="i-lucide-car"
-                      class="size-4 mt-0.5 text-primary flex-none"
-                    />
-                    <span class="whitespace-pre-line">Otopark / ulaşım: {{ venueParking }}</span>
-                  </p>
-                  <p
-                    v-if="venueRules"
-                    class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
-                  >
-                    <UIcon
-                      name="i-lucide-info"
-                      class="size-4 mt-0.5 text-neutral-400 flex-none"
-                    />
-                    <span class="whitespace-pre-line">{{ venueRules }}</span>
-                  </p>
-                  <p
-                    v-if="venueChildRule"
-                    class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
-                  >
-                    <UIcon
-                      name="i-lucide-baby"
-                      class="size-4 mt-0.5 text-neutral-400 flex-none"
-                    />
-                    <span class="whitespace-pre-line">{{ venueChildRule }}</span>
-                  </p>
-                  <p
-                    v-if="venueAccessibility"
-                    class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
-                  >
-                    <UIcon
-                      name="i-lucide-accessibility"
-                      class="size-4 mt-0.5 text-neutral-400 flex-none"
-                    />
-                    <span class="whitespace-pre-line">{{ venueAccessibility }}</span>
-                  </p>
-                </template>
-                <div
-                  v-else-if="venueBoxOffice || venueBoxOfficePhone || venueParking || venueRules || venueChildRule || venueAccessibility"
-                  class="space-y-2"
-                  aria-hidden="true"
+                <p
+                  v-if="venueBoxOffice"
+                  class="flex items-start gap-2"
                 >
-                  <USkeleton class="h-4 w-full" />
-                  <USkeleton class="h-4 w-5/6" />
-                </div>
+                  <UIcon
+                    name="i-lucide-ticket"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
+                  <span class="whitespace-pre-line">Gişe: {{ venueBoxOffice }}</span>
+                </p>
+                <p
+                  v-if="venueBoxOfficePhone"
+                  class="flex items-start gap-2"
+                >
+                  <UIcon
+                    name="i-lucide-phone"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
+                  <span>{{ venueBoxOfficePhone }}</span>
+                </p>
+                <p
+                  v-if="venueParking"
+                  class="flex items-start gap-2"
+                >
+                  <UIcon
+                    name="i-lucide-car"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
+                  <span class="whitespace-pre-line">Otopark / ulaşım: {{ venueParking }}</span>
+                </p>
+                <p
+                  v-if="venueRules"
+                  class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="size-4 mt-0.5 text-neutral-400 flex-none"
+                  />
+                  <span class="whitespace-pre-line">{{ venueRules }}</span>
+                </p>
+                <p
+                  v-if="venueChildRule"
+                  class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
+                >
+                  <UIcon
+                    name="i-lucide-baby"
+                    class="size-4 mt-0.5 text-neutral-400 flex-none"
+                  />
+                  <span class="whitespace-pre-line">{{ venueChildRule }}</span>
+                </p>
+                <p
+                  v-if="venueAccessibility"
+                  class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
+                >
+                  <UIcon
+                    name="i-lucide-accessibility"
+                    class="size-4 mt-0.5 text-neutral-400 flex-none"
+                  />
+                  <span class="whitespace-pre-line">{{ venueAccessibility }}</span>
+                </p>
               </div>
 
               <div class="flex flex-wrap gap-2 pt-2">

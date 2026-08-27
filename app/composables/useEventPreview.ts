@@ -15,7 +15,8 @@ export function summaryToEventPreview(summary: EventSummary): EventDetail {
           id: summary.venueId,
           name: summary.venue,
           city: summary.city,
-          country: summary.country
+          country: summary.country,
+          address: [summary.city, summary.country].filter(Boolean).join(', ') || undefined
         }
       : undefined
   }

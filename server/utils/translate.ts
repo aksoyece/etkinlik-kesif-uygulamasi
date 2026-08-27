@@ -9,7 +9,7 @@ import {
 /** Yalnızca başarılı Türkçe çeviriler — İngilizce fallback kalıcı cache’lenmez */
 const translationCache = new Map<string, string>()
 
-const TRANSLATE_TIMEOUT_MS = 14000
+const TRANSLATE_TIMEOUT_MS = 2800
 
 function cacheKey(text: string) {
   return `tr:v3:${text}`
@@ -155,12 +155,11 @@ async function translateViaLibre(text: string): Promise<string | null> {
   return null
 }
 
-/** Sağlayıcıları sırayla dene — paralel istek 429 üretir */
+/** Sağlayıcıları sırayla dene — Libre yavaş/kararsız, kritik yolda yok */
 async function translateChunkRaw(text: string): Promise<string | null> {
   return (
     await translateViaGoogle(text)
     ?? await translateViaMyMemory(text)
-    ?? await translateViaLibre(text)
   )
 }
 
@@ -250,8 +249,28 @@ export async function localizeVenueCopy<T extends {
   accessibilityDetail?: string
   boxOffice?: string
   boxOfficePhone?: string
+  name?: string
 }>(venue: T): Promise<T> {
-  // Paralel alan çevirisi — her alan kendi içinde sıralı provider kullanır
+  // İsim / adres / ülke hemen — makine çevirisi yok
+  const base = {
+    ...venue,
+    address: localizeAddressLine(venue.address) || venue.address,
+    country: localizeCountryName(venue.country) || venue.country,
+    boxOfficePhone: venue.boxOfficePhone
+  }
+
+  const hasProse = Boolean(
+    venue.parkingDetail
+    || venue.generalRule
+    || venue.childRule
+    || venue.accessibilityDetail
+    || venue.boxOffice
+  )
+
+  if (!hasProse) {
+    return base
+  }
+
   const [
     parkingDetail,
     generalRule,
@@ -267,15 +286,12 @@ export async function localizeVenueCopy<T extends {
   ])
 
   return {
-    ...venue,
-    address: localizeAddressLine(venue.address) || venue.address,
-    country: localizeCountryName(venue.country) || venue.country,
+    ...base,
     parkingDetail,
     generalRule,
     childRule,
     accessibilityDetail,
-    boxOffice,
-    boxOfficePhone: venue.boxOfficePhone
+    boxOffice
   }
 }
 
@@ -298,12 +314,14 @@ export async function localizeEventCopy<T extends {
   }
   attractions?: Array<{ name: string, url?: string }>
 }>(detail: T): Promise<T> {
-  // Önce ana bilgi metinleri (kullanıcı “Etkinlik bilgisi” görür), sonra mekan
-  const info = await translateToTurkish(detail.info)
-  const pleaseNote = await translateToTurkish(detail.pleaseNote)
-  const venueDetail = detail.venueDetail
-    ? await localizeVenueCopy(detail.venueDetail)
-    : detail.venueDetail
+  // Paralel: mekan adı/adres çeviriye bağlı değil; prose alanları birlikte biter
+  const [info, pleaseNote, venueDetail] = await Promise.all([
+    translateToTurkish(detail.info),
+    translateToTurkish(detail.pleaseNote),
+    detail.venueDetail
+      ? localizeVenueCopy(detail.venueDetail)
+      : Promise.resolve(detail.venueDetail)
+  ])
 
   return {
     ...detail,
