@@ -47,6 +47,8 @@ export interface TicketmasterVenue extends TicketmasterNamedEntity {
   address?: TicketmasterAddress
   location?: TicketmasterLocation
   parkingDetail?: string
+  /** Erişilebilirlik / ADA metni */
+  accessibleSeatingDetail?: string
   generalInfo?: {
     generalRule?: string
     childRule?: string
@@ -191,9 +193,18 @@ export interface VenueSummary {
   postalCode?: string
   latitude?: string
   longitude?: string
+  /** Otopark / ulaşım açıklaması (prose — çevrilir) */
   parkingDetail?: string
+  /** Genel giriş / mekan kuralları (prose) */
   generalRule?: string
+  /** Yaş / çocuk kuralları (prose) */
+  childRule?: string
+  /** Erişilebilirlik açıklaması (prose) */
+  accessibilityDetail?: string
+  /** Gişe / ödeme / will-call metinleri (prose; telefon ayrı) */
   boxOffice?: string
+  /** Ham telefon — çevrilmez */
+  boxOfficePhone?: string
 }
 
 export interface EventDetail extends EventSummary {

@@ -30,5 +30,5 @@ export default defineCachedEventHandler(async (event): Promise<VenueSummary> => 
 }, {
   maxAge: 60 * 30,
   swr: true,
-  getKey: event => `venue:v4:tr:${getRouterParam(event, 'id') || ''}`
+  getKey: event => `venue:v5:tr:${getRouterParam(event, 'id') || ''}`
 })

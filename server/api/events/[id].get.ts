@@ -21,5 +21,5 @@ export default defineCachedEventHandler(async (event): Promise<EventDetail> => {
 }, {
   maxAge: 60 * 30,
   swr: true,
-  getKey: event => `event:v13:img:${getRouterParam(event, 'id') || ''}`
+  getKey: event => `event:v14:tr:${getRouterParam(event, 'id') || ''}`
 })

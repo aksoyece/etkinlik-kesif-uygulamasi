@@ -2,7 +2,6 @@
 import { mapsUrl, toFavoriteEvent, uniqueGalleryImages } from '#shared/utils/event'
 import { buildGoogleCalendarUrl, buildIcsContent } from '#shared/utils/calendar'
 import { translateCategory, translateGenre, translateStatus } from '#shared/utils/labels'
-import { applyLocaleFixes } from '#shared/utils/localize'
 import { isValidTicketUrl } from '#shared/utils/ticketUrl'
 
 const route = useRoute()
@@ -32,12 +31,15 @@ const pageUrl = computed(() => `${requestUrl.origin}${route.fullPath}`)
 const categoryLabel = computed(() => translateCategory(event.value?.category))
 const genreLabel = computed(() => translateGenre(event.value?.genre))
 const statusText = computed(() => translateStatus(event.value?.status))
-/** Sunucu zaten çevirir; istemci yalnızca gün/saat güvenli düzeltmesi yapar */
-const infoText = computed(() => event.value?.info ? applyLocaleFixes(event.value.info) : undefined)
-const pleaseNoteText = computed(() => event.value?.pleaseNote ? applyLocaleFixes(event.value.pleaseNote) : undefined)
-const venueBoxOffice = computed(() => venueInfo.value?.boxOffice ? applyLocaleFixes(venueInfo.value.boxOffice) : undefined)
-const venueParking = computed(() => venueInfo.value?.parkingDetail ? applyLocaleFixes(venueInfo.value.parkingDetail) : undefined)
-const venueRules = computed(() => venueInfo.value?.generalRule ? applyLocaleFixes(venueInfo.value.generalRule) : undefined)
+/** Sunucu localizeEventCopy / localizeVenueCopy ile çevirir — template ham TM metni kullanmaz */
+const infoText = computed(() => event.value?.info || undefined)
+const pleaseNoteText = computed(() => event.value?.pleaseNote || undefined)
+const venueBoxOffice = computed(() => venueInfo.value?.boxOffice || undefined)
+const venueBoxOfficePhone = computed(() => venueInfo.value?.boxOfficePhone || undefined)
+const venueParking = computed(() => venueInfo.value?.parkingDetail || undefined)
+const venueRules = computed(() => venueInfo.value?.generalRule || undefined)
+const venueChildRule = computed(() => venueInfo.value?.childRule || undefined)
+const venueAccessibility = computed(() => venueInfo.value?.accessibilityDetail || undefined)
 const venueAddress = computed(() => venueInfo.value?.address)
 const canBuyTicket = computed(() => isValidTicketUrl(event.value?.ticketUrl))
 
@@ -656,7 +658,17 @@ const barcodeStyle = computed(() => {
                       name="i-lucide-ticket"
                       class="size-4 mt-0.5 text-primary flex-none"
                     />
-                    <span>Gişe: {{ venueBoxOffice }}</span>
+                    <span class="whitespace-pre-line">Gişe: {{ venueBoxOffice }}</span>
+                  </p>
+                  <p
+                    v-if="venueBoxOfficePhone"
+                    class="flex items-start gap-2"
+                  >
+                    <UIcon
+                      name="i-lucide-phone"
+                      class="size-4 mt-0.5 text-primary flex-none"
+                    />
+                    <span>{{ venueBoxOfficePhone }}</span>
                   </p>
                   <p
                     v-if="venueParking"
@@ -666,11 +678,11 @@ const barcodeStyle = computed(() => {
                       name="i-lucide-car"
                       class="size-4 mt-0.5 text-primary flex-none"
                     />
-                    <span>Otopark: {{ venueParking }}</span>
+                    <span class="whitespace-pre-line">Otopark / ulaşım: {{ venueParking }}</span>
                   </p>
                   <p
                     v-if="venueRules"
-                    class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500 italic"
+                    class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
                   >
                     <UIcon
                       name="i-lucide-info"
@@ -678,9 +690,29 @@ const barcodeStyle = computed(() => {
                     />
                     <span class="whitespace-pre-line">{{ venueRules }}</span>
                   </p>
+                  <p
+                    v-if="venueChildRule"
+                    class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
+                  >
+                    <UIcon
+                      name="i-lucide-baby"
+                      class="size-4 mt-0.5 text-neutral-400 flex-none"
+                    />
+                    <span class="whitespace-pre-line">{{ venueChildRule }}</span>
+                  </p>
+                  <p
+                    v-if="venueAccessibility"
+                    class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
+                  >
+                    <UIcon
+                      name="i-lucide-accessibility"
+                      class="size-4 mt-0.5 text-neutral-400 flex-none"
+                    />
+                    <span class="whitespace-pre-line">{{ venueAccessibility }}</span>
+                  </p>
                 </template>
                 <div
-                  v-else-if="venueBoxOffice || venueParking || venueRules"
+                  v-else-if="venueBoxOffice || venueBoxOfficePhone || venueParking || venueRules || venueChildRule || venueAccessibility"
                   class="space-y-2"
                   aria-hidden="true"
                 >

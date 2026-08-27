@@ -388,8 +388,14 @@ export function mapVenue(venue?: TicketmasterVenue): VenueSummary | undefined {
     longitude: venue.location?.longitude,
     parkingDetail: venue.parkingDetail,
     generalRule: venue.generalInfo?.generalRule,
-    boxOffice: venue.boxOfficeInfo?.openHoursDetail
-      || venue.boxOfficeInfo?.phoneNumberDetail
+    childRule: venue.generalInfo?.childRule,
+    accessibilityDetail: venue.accessibleSeatingDetail,
+    boxOffice: [
+      venue.boxOfficeInfo?.openHoursDetail,
+      venue.boxOfficeInfo?.acceptedPaymentDetail,
+      venue.boxOfficeInfo?.willCallDetail
+    ].filter(Boolean).join('\n\n') || undefined,
+    boxOfficePhone: venue.boxOfficeInfo?.phoneNumberDetail
   }
 }
 
