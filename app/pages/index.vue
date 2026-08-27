@@ -15,7 +15,6 @@ useSeoMeta({
 
 const router = useRouter()
 const favorites = useFavoritesStore()
-const keyword = ref('')
 
 const discoverCategories = [
   { label: 'Müzik', value: 'Music', icon: 'i-lucide-music' },
@@ -63,14 +62,6 @@ onMounted(() => {
   favorites.init()
   lastCity.value = readLastCity()
 })
-
-function exploreSearch() {
-  const q = keyword.value.trim()
-  router.push({
-    path: '/events',
-    query: q ? { keyword: q } : {}
-  })
-}
 
 function goCategory(value: string) {
   router.push({
@@ -186,31 +177,7 @@ const passStats = computed(() => [
       </div>
     </section>
 
-    <!-- Sade arama -->
-    <section class="ticket-stub flex-col p-5 sm:p-7 gap-4">
-      <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500">
-        Hızlı arama
-      </p>
-      <div class="flex flex-col sm:flex-row gap-3">
-        <UInput
-          v-model="keyword"
-          icon="i-lucide-search"
-          size="lg"
-          placeholder="Sanatçı, etkinlik veya mekan adı"
-          class="w-full flex-1"
-          @keydown.enter.prevent="exploreSearch"
-        />
-        <UButton
-          color="primary"
-          size="lg"
-          icon="i-lucide-compass"
-          class="sm:flex-none hover:brightness-110"
-          @click="exploreSearch"
-        >
-          Keşfet
-        </UButton>
-      </div>
-    </section>
+    <QuickSearchResults />
 
     <!-- Bu Hafta Öne Çıkanlar -->
     <section
