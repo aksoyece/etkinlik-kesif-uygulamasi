@@ -1,0 +1,14 @@
+---
+description: Anlamlı değişikliklerden sonra otomatik commit + GitHub push (Vercel deploy)
+alwaysApply: true
+---
+
+# Otomatik commit ve push
+
+Bu projede kullanıcı her seferinde istemese de:
+
+1. Anlamlı bir özellik, düzeltme veya iyileştirme bittikten sonra **commit + `git push origin`** yap.
+2. Commit mesajı kısa ve "neden" odaklı olsun; standart git güvenlik kurallarına uy (force push yok, config değiştirme, secret commit etme).
+3. **Vercel’e ayrı CLI deploy gerekmez** — `main` (veya bağlı branch) GitHub’a push edilince Vercel otomatik deploy alır. Push sonrası bunu kısaca belirt.
+4. Kullanıcı açıkça “commit/push etme” demedikçe bu kural geçerlidir ve genel “yalnızca istenince commit et” kuralını bu repo için geçersiz kılar.
+5. Boş commit yapma; sadece gerçek değişiklik varsa commit/push et.
