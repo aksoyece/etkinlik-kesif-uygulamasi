@@ -76,7 +76,10 @@ function toggleFavorite() {
   })
 }
 
-function warmDetail() {
+const { seedFromSummary } = useEventPreview()
+
+function onNavigateIntent() {
+  seedFromSummary(props.event as EventSummary)
   prefetchEventDetail(props.event.id)
 }
 </script>
@@ -87,8 +90,7 @@ function warmDetail() {
       :to="`/events/${event.id}`"
       prefetch
       class="flex flex-col sm:flex-row flex-1 min-w-0 h-full text-inherit no-underline"
-      @pointerenter="warmDetail"
-      @focus="warmDetail"
+      @pointerdown="onNavigateIntent"
     >
       <div class="relative block w-full sm:w-[40%] aspect-[4/3] overflow-hidden flex-none">
         <img

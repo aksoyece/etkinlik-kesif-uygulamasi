@@ -18,7 +18,10 @@ const categoryBadgeClass = computed(() => {
   return 'bg-neutral-500 text-white'
 })
 
+const { seedFromSummary } = useEventPreview()
+
 function warmDetail() {
+  seedFromSummary(props.event)
   prefetchEventDetail(props.event.id)
 }
 </script>
@@ -28,8 +31,7 @@ function warmDetail() {
     :to="`/events/${event.id}`"
     prefetch
     class="ticket-stub group flex-col h-full overflow-hidden"
-    @pointerenter="warmDetail"
-    @focus="warmDetail"
+    @pointerdown="warmDetail"
   >
     <div class="relative aspect-[16/10] w-full overflow-hidden flex-none">
       <img

@@ -1,6 +1,6 @@
 /**
- * Kart hover/focus sırasında detay API’sini ısıtır;
- * useEvent getCachedData ile anında gösterir.
+ * Kart tıklamasında (pointerdown) detay API’sini ısıtır.
+ * Hover’da toplu prefetch yapmaz — çeviri + TM yükünü şişiriyordu.
  */
 export function prefetchEventDetail(id: string | undefined | null) {
   if (!import.meta.client || !id) {
@@ -28,13 +28,29 @@ export function prefetchEventDetail(id: string | undefined | null) {
   const request = $fetch(`/api/events/${encodeURIComponent(id)}`)
     .then((data) => {
       nuxtApp.payload.data[key] = data
+      return data
     })
-    .catch(() => {
-      // Prefetch başarısız olursa navigasyonda normal istek yapılır
-    })
+    .catch(() => undefined)
     .finally(() => {
-      bucket._eventDetailPrefetch?.delete(key)
+      // Kısa süre map’te tutma — useEvent aynı promise’i paylaşabilsin diye
+      // silmeyi geciktirme: navigasyon aynı anda başlar
+      queueMicrotask(() => {
+        // Veri payload’a yazıldıysa map’ten düşürülebilir
+        if (nuxtApp.payload.data[key]) {
+          bucket._eventDetailPrefetch?.delete(key)
+        }
+      })
     })
 
   bucket._eventDetailPrefetch.set(key, request)
+}
+
+export function getEventDetailPrefetch(id: string): Promise<unknown> | undefined {
+  if (!import.meta.client || !id) {
+    return undefined
+  }
+  const nuxtApp = useNuxtApp() as ReturnType<typeof useNuxtApp> & {
+    _eventDetailPrefetch?: Map<string, Promise<unknown>>
+  }
+  return nuxtApp._eventDetailPrefetch?.get(`event-${id}`)
 }

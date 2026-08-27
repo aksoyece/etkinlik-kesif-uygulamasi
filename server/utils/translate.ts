@@ -152,21 +152,63 @@ export async function localizeVenueCopy<T extends {
   generalRule?: string
   boxOffice?: string
 }>(venue: T): Promise<T> {
-  const [parkingDetail, generalRule, boxOffice, address] = await Promise.all([
-    translateToTurkish(venue.parkingDetail, { force: true }),
-    translateToTurkish(venue.generalRule, { force: true }),
-    translateToTurkish(venue.boxOffice, { force: true }),
-    Promise.resolve(localizeAddressLine(venue.address) || venue.address)
-  ])
-
+  // Mekan uzun metinleri kritik yolu bloklamasın — yerel düzeltme yeterli
   return {
     ...venue,
-    address,
+    address: localizeAddressLine(venue.address) || venue.address,
     country: localizeCountryName(venue.country) || venue.country,
-    parkingDetail,
-    generalRule,
-    boxOffice
+    parkingDetail: venue.parkingDetail
+      ? applyLocaleFixes(applyKnownPhrases(venue.parkingDetail))
+      : venue.parkingDetail,
+    generalRule: venue.generalRule
+      ? applyLocaleFixes(applyKnownPhrases(venue.generalRule))
+      : venue.generalRule,
+    boxOffice: venue.boxOffice
+      ? applyLocaleFixes(applyKnownPhrases(venue.boxOffice))
+      : venue.boxOffice
   }
+}
+
+async function translateWithBudget(
+  text: string | undefined | null,
+  budgetMs: number
+): Promise<string | undefined> {
+  if (text == null) {
+    return undefined
+  }
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return text
+  }
+
+  const fallback = applyLocaleFixes(applyKnownPhrases(trimmed))
+  if (!looksMostlyEnglish(trimmed)) {
+    return fallback
+  }
+
+  let settled = false
+  return await new Promise<string>((resolve) => {
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true
+        resolve(fallback)
+      }
+    }, budgetMs)
+
+    void translateToTurkish(trimmed, { force: true }).then((translated) => {
+      if (!settled) {
+        settled = true
+        clearTimeout(timer)
+        resolve(translated || fallback)
+      }
+    }).catch(() => {
+      if (!settled) {
+        settled = true
+        clearTimeout(timer)
+        resolve(fallback)
+      }
+    })
+  })
 }
 
 export async function localizeEventCopy<T extends {
@@ -181,9 +223,10 @@ export async function localizeEventCopy<T extends {
     boxOffice?: string
   }
 }>(detail: T): Promise<T> {
+  // Toplam çeviri bütçesi ~900ms; aşarsa yerel düzeltmeyle dön (detay sayfası açılsın)
   const [info, pleaseNote, venueDetail] = await Promise.all([
-    translateToTurkish(detail.info, { force: true }),
-    translateToTurkish(detail.pleaseNote, { force: true }),
+    translateWithBudget(detail.info, 900),
+    translateWithBudget(detail.pleaseNote, 900),
     detail.venueDetail
       ? localizeVenueCopy(detail.venueDetail)
       : Promise.resolve(detail.venueDetail)

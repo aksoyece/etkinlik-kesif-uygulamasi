@@ -528,7 +528,7 @@ const barcodeStyle = computed(() => {
 
           <!-- Sanatçılar / Attractions -->
           <section
-            v-if="!belowFoldReady && event.attractions.length"
+            v-if="!belowFoldReady && event.attractions?.length"
             class="space-y-4"
             aria-hidden="true"
           >
@@ -549,7 +549,7 @@ const barcodeStyle = computed(() => {
           </section>
 
           <section
-            v-else-if="belowFoldReady && event.attractions.length"
+            v-else-if="belowFoldReady && event.attractions?.length"
             class="space-y-4"
           >
             <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white">

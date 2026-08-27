@@ -1,5 +1,5 @@
 import type { FormSubmitEvent } from '@nuxt/ui'
-import type { EventFilterState, EventListResult, EventSearchParams } from '~/types/event'
+import type { EventDetail, EventFilterState, EventListResult, EventSearchParams } from '~/types/event'
 import {
   defaultFilterState,
   eventFilterSchema,
@@ -12,6 +12,7 @@ import {
 import { writeLastCity } from '#shared/utils/event'
 
 export function useEvents(params: MaybeRefOrGetter<EventSearchParams>) {
+  const nuxtApp = useNuxtApp()
   const query = computed(() => {
     const value = toValue(params)
 
@@ -30,7 +31,10 @@ export function useEvents(params: MaybeRefOrGetter<EventSearchParams>) {
   const { data, pending, error, refresh, status } = useFetch<EventListResult>('/api/events', {
     query,
     watch: [query],
-    lazy: true
+    lazy: true,
+    getCachedData(key) {
+      return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
+    }
   })
 
   const events = computed(() => data.value?.events ?? [])
@@ -55,13 +59,22 @@ export function useEvents(params: MaybeRefOrGetter<EventSearchParams>) {
 export function useEvent(id: MaybeRefOrGetter<string>) {
   const eventId = computed(() => toValue(id))
   const nuxtApp = useNuxtApp()
+  const { preview } = useEventPreview()
 
   const { data, pending, error, refresh } = useAsyncData(
     () => `event-${eventId.value}`,
-    () => $fetch(`/api/events/${encodeURIComponent(eventId.value)}`),
+    async () => {
+      const inflight = getEventDetailPrefetch(eventId.value)
+      if (inflight) {
+        const prefetched = await inflight
+        if (prefetched) {
+          return prefetched as EventDetail
+        }
+      }
+      return await $fetch<EventDetail>(`/api/events/${encodeURIComponent(eventId.value)}`)
+    },
     {
       watch: [eventId],
-      // Route geçişini API bitene kadar bloklama
       lazy: true,
       server: true,
       dedupe: 'defer',
@@ -71,11 +84,31 @@ export function useEvent(id: MaybeRefOrGetter<string>) {
     }
   )
 
+  // Karttan gelen önizleme ile anında göster; API gelince tam detay
+  const event = computed(() => {
+    if (data.value) {
+      return data.value
+    }
+    if (preview.value?.id === eventId.value) {
+      return preview.value
+    }
+    return null
+  })
+
+  const showPending = computed(() => pending.value && !event.value)
+
+  watch(data, (value) => {
+    if (value && preview.value?.id === value.id) {
+      preview.value = null
+    }
+  })
+
   return {
-    event: data,
-    pending,
+    event,
+    pending: showPending,
     error,
-    refresh
+    refresh,
+    loadingDetail: pending
   }
 }
 
