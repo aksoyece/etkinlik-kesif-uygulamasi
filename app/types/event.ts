@@ -154,6 +154,8 @@ export interface EventSummary {
   country?: string
   venue?: string
   venueId?: string
+  /** Liste gömülü mekan — detay önizlemesi için adres/harita/link */
+  venueDetail?: VenueSummary
   category?: string
   genre?: string
   priceLabel?: string
@@ -227,7 +229,11 @@ export interface FavoriteEvent {
   localDate?: string
   localTime?: string
   city?: string
+  country?: string
   venue?: string
+  venueId?: string
+  venueDetail?: VenueSummary
+  url?: string
   category?: string
   priceLabel?: string
 }

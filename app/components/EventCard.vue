@@ -79,7 +79,7 @@ function toggleFavorite() {
 const { seedFromSummary } = useEventPreview()
 
 function onNavigateIntent() {
-  seedFromSummary(props.event as EventSummary)
+  seedFromSummary(props.event)
   prefetchEventDetail(props.event.id)
 }
 </script>

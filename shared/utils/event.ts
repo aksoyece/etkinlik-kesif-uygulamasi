@@ -359,11 +359,15 @@ export function formatPriceRange(ranges?: TicketmasterPriceRange[]): string | un
   return formatter.format(range.min ?? range.max ?? 0)
 }
 
-export function mapVenue(venue?: TicketmasterVenue): VenueSummary | undefined {
+export function mapVenue(
+  venue?: TicketmasterVenue,
+  options: { includeProse?: boolean } = {}
+): VenueSummary | undefined {
   if (!venue?.name) {
     return undefined
   }
 
+  const includeProse = options.includeProse !== false
   const country = localizeCountryName(venue.country?.name) || venue.country?.name
 
   const addressParts = [
@@ -375,7 +379,7 @@ export function mapVenue(venue?: TicketmasterVenue): VenueSummary | undefined {
     country
   ].filter(Boolean)
 
-  return {
+  const core: VenueSummary = {
     id: venue.id,
     name: venue.name,
     url: venue.url,
@@ -385,7 +389,15 @@ export function mapVenue(venue?: TicketmasterVenue): VenueSummary | undefined {
     country,
     postalCode: venue.postalCode,
     latitude: venue.location?.latitude,
-    longitude: venue.location?.longitude,
+    longitude: venue.location?.longitude
+  }
+
+  if (!includeProse) {
+    return core
+  }
+
+  return {
+    ...core,
     parkingDetail: venue.parkingDetail,
     generalRule: venue.generalInfo?.generalRule,
     childRule: venue.generalInfo?.childRule,
@@ -442,6 +454,8 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
     country: localizeCountryName(venue?.country?.name) || venue?.country?.name,
     venue: venue?.name,
     venueId: venue?.id,
+    // Liste → detay önizlemesi: adres / harita / mekan linki hemen
+    venueDetail: mapVenue(venue, { includeProse: false }),
     category: classification?.segment?.name,
     genre: classification?.genre?.name,
     priceLabel: formatPriceRange(event.priceRanges),
@@ -515,7 +529,11 @@ export function toFavoriteEvent(event: EventSummary): FavoriteEvent {
     localDate: event.localDate,
     localTime: event.localTime,
     city: event.city,
+    country: event.country,
     venue: event.venue,
+    venueId: event.venueId,
+    venueDetail: event.venueDetail,
+    url: event.url,
     category: event.category,
     priceLabel: event.priceLabel
   }

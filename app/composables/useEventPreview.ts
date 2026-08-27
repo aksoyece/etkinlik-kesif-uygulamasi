@@ -1,34 +1,56 @@
-import type { EventDetail, EventSummary } from '#shared/types/event'
+import type { EventDetail, EventSummary, FavoriteEvent, VenueSummary } from '#shared/types/event'
 
-/**
- * Liste/karttan detaya geçerken ana bilgileri anında göstermek için önizleme.
- * Tam API cevabı gelince useEvent bunu ezer.
- */
-export function summaryToEventPreview(summary: EventSummary): EventDetail {
-  const address = [summary.city, summary.country].filter(Boolean).join(', ') || undefined
+function fallbackVenueDetail(summary: EventSummary | FavoriteEvent): VenueSummary | undefined {
+  if (!summary.venue) {
+    return undefined
+  }
 
   return {
-    ...summary,
-    ticketUrl: summary.url,
-    attractions: summary.attractions ?? [],
-    images: summary.image ? [summary.image] : [],
-    venueDetail: summary.venue
-      ? {
-          id: summary.venueId,
-          name: summary.venue,
-          city: summary.city,
-          country: summary.country,
-          // Adres + harita linki karttan hemen; sokak satırı kabuk API ile gelir
-          address
-        }
-      : undefined
+    id: summary.venueId,
+    name: summary.venue,
+    city: summary.city,
+    country: summary.country,
+    address: [summary.city, summary.country].filter(Boolean).join(', ') || undefined
+  }
+}
+
+/**
+ * Liste/karttan detaya geçerken mümkün olan her alanı anında göstermek için önizleme.
+ * Tam API cevabı gelince useEvent bunu ezer.
+ */
+export function summaryToEventPreview(summary: EventSummary | FavoriteEvent): EventDetail {
+  const url = summary.url
+  const attractions = 'attractions' in summary ? (summary.attractions ?? []) : []
+  const genre = 'genre' in summary ? summary.genre : undefined
+  const status = 'status' in summary ? summary.status : undefined
+
+  return {
+    id: summary.id,
+    name: summary.name,
+    url,
+    image: summary.image,
+    dateLabel: summary.dateLabel,
+    localDate: summary.localDate,
+    localTime: summary.localTime,
+    city: summary.city,
+    country: summary.country,
+    venue: summary.venue,
+    venueId: summary.venueId,
+    venueDetail: summary.venueDetail ?? fallbackVenueDetail(summary),
+    category: summary.category,
+    genre,
+    priceLabel: summary.priceLabel,
+    status,
+    ticketUrl: url,
+    attractions,
+    images: summary.image ? [summary.image] : []
   }
 }
 
 export function useEventPreview() {
   const preview = useState<EventDetail | null>('event-detail-preview', () => null)
 
-  function seedFromSummary(summary: EventSummary | null | undefined) {
+  function seedFromSummary(summary: EventSummary | FavoriteEvent | null | undefined) {
     if (!summary?.id) {
       return
     }
