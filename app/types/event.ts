@@ -219,37 +219,6 @@ export interface EventDetail extends EventSummary {
   attractions: AttractionSummary[]
   venueDetail?: VenueSummary
   images: string[]
-  /**
-   * Kabuk yanıtında: çevirisi henüz gelmemiş prose alanları.
-   * true iken UI İngilizce render etmez — skeleton gösterir.
-   */
-  pendingProse?: EventProsePending
-  /** Çeviri denendi ama Türkçe üretilemedi — UI rawProse’u son çare gösterir */
-  failedProse?: EventProsePending
-  /** Ham İngilizce prose — yalnızca failedProse / ağ hatası fallback; pending iken render edilmez */
-  rawProse?: EventRawProse
-}
-
-/** Çevrilmesi gereken prose alanlarının bekleme bayrakları */
-export interface EventProsePending {
-  info?: boolean
-  pleaseNote?: boolean
-  parkingDetail?: boolean
-  generalRule?: boolean
-  childRule?: boolean
-  accessibilityDetail?: boolean
-  boxOffice?: boolean
-}
-
-/** Ham İngilizce prose — yalnızca enrich fail fallback */
-export interface EventRawProse {
-  info?: string
-  pleaseNote?: string
-  parkingDetail?: string
-  generalRule?: string
-  childRule?: string
-  accessibilityDetail?: string
-  boxOffice?: string
 }
 
 export interface FavoriteEvent {

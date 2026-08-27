@@ -156,7 +156,6 @@ export function applyKnownPhrases(text: string): string {
 /**
  * Senkron güvenli yerelleştirme.
  * Uzun İngilizce paragrafları kelime kelime BOZMAZ — yalnızca gün/saat/ülke + bilinen kısa kalıplar.
- * Tam çeviri için sunucu translateToTurkish kullanın.
  */
 export function localizeTicketmasterText(text?: string | null): string | undefined {
   if (text == null) {

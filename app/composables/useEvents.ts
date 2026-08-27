@@ -60,7 +60,6 @@ export function useEvent(id: MaybeRefOrGetter<string>) {
   const eventId = computed(() => toValue(id))
   const nuxtApp = useNuxtApp()
   const { preview } = useEventPreview()
-  const localePending = ref(false)
 
   const { data, pending, error, refresh } = useAsyncData(
     () => `event-${eventId.value}`,
@@ -94,57 +93,15 @@ export function useEvent(id: MaybeRefOrGetter<string>) {
 
   const showPending = computed(() => pending.value && !event.value)
 
-  watch(eventId, () => {
-    localePending.value = false
-  })
-
   watch(data, (value) => {
     if (value && preview.value?.id === value.id) {
       preview.value = null
     }
   })
 
-  // Kabuk geldikten sonra prose çevirisi — ana içeriği bloklamaz; skeleton ile beklenir
-  watch(
-    () => data.value,
-    (value) => {
-      if (!value?.id) {
-        localePending.value = false
-        return
-      }
-
-      if (!hasPendingProse(value)) {
-        localePending.value = false
-        return
-      }
-
-      localePending.value = true
-
-      if (!import.meta.client) {
-        return
-      }
-
-      void enrichEventLocale(value.id, (full) => {
-        if (eventId.value === full.id) {
-          data.value = full
-          localePending.value = false
-        }
-      }).then((result) => {
-        if (result || eventId.value !== value.id || !data.value) {
-          return
-        }
-        // Ağ hatası: son çare İngilizce
-        data.value = applyRawProseFallback(data.value)
-        localePending.value = false
-      })
-    },
-    { immediate: true }
-  )
-
   return {
     event,
     pending: showPending,
-    localePending,
     error,
     refresh,
     loadingDetail: pending
