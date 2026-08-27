@@ -34,15 +34,32 @@ Aktif market `shared/utils/market.ts` üzerinden yönetilir; TR tanımı ileride
 | 19 | Temel testler | Tamam — Vitest (`npm run test`) |
 | 20 | GitHub + README | Tamam |
 
-## Özellikler (ek)
+## Özellikler
 
-- Takvime ekle (.ics) ve Google Takvim
-- Bağlantı paylaşımı
-- Detayda görsel galerisi ve benzer etkinlikler
-- Popüler isimler bölümü
+- Ticketmaster Discovery API üzerinden gerçek ve yaklaşan etkinlikleri listeleme
+- Etkinlik kartlarında ad, görsel, tarih, şehir, mekan ve kategori bilgileri
+- Canlı arama ve autocomplete
+- Şehir, kategori ve tarih filtreleri
+- Etkinlikleri tarih ve diğer kriterlere göre sıralama
+- Pagination / sayfalama
+- Etkinlik detay sayfası
+- Detay sayfasında etkinlik, sanatçı ve mekan bilgileri
+- Benzer etkinlik önerileri
+- Etkinlik görsel galerisi ve oturma planı
+- Favorilere etkinlik ekleme ve çıkarma
+- Favorilerin Pinia ile yönetilmesi ve Local Storage'da kalıcı tutulması
+- API işlemlerinin Nuxt composable yapısı ile yönetilmesi
+- Loading, error ve empty state durumları
+- Nuxt UI componentleri
+- Responsive tasarım
+- Koyu / açık tema
+- TypeScript
+- Zod ile gerekli doğrulama işlemleri
+- Takvime ekleme (.ics ve Google Takvim)
+- Etkinlik bağlantısı paylaşma
 - SEO (Open Graph + JSON-LD)
-- Ticketmaster sunucu önbelleği
-- Kompakt ticket temalı footer
+- Ticketmaster API yanıtları için sunucu önbelleği
+- Temel birim testleri
 
 ## Kurulum
 
