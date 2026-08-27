@@ -9,8 +9,12 @@ const debouncedQuery = ref('')
 
 const router = useRouter()
 const rootEl = ref<HTMLElement | null>(null)
+const inputWrapEl = ref<HTMLElement | null>(null)
+const panelEl = ref<HTMLElement | null>(null)
 const inputId = useId()
 const listboxId = `${inputId}-listbox`
+
+const panelStyle = ref<Record<string, string>>({})
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -49,6 +53,18 @@ const activeOptionId = computed(() =>
     : undefined
 )
 
+function updatePanelPosition() {
+  const rect = inputWrapEl.value?.getBoundingClientRect()
+  if (!rect) return
+  panelStyle.value = {
+    position: 'fixed',
+    top: `${Math.round(rect.bottom + 8)}px`,
+    left: `${Math.round(rect.left)}px`,
+    width: `${Math.round(rect.width)}px`,
+    zIndex: '80'
+  }
+}
+
 watch(keyword, (value) => {
   if (debounceTimer) clearTimeout(debounceTimer)
 
@@ -70,6 +86,12 @@ watch(results, (list) => {
     return
   }
   activeIndex.value = list.length ? Math.min(Math.max(activeIndex.value, 0), list.length - 1) : -1
+})
+
+watch(showPanel, async (visible) => {
+  if (!visible) return
+  await nextTick()
+  updatePanelPosition()
 })
 
 function closePanel() {
@@ -129,32 +151,47 @@ function onInputKeydown(event: KeyboardEvent) {
 
 function onDocumentPointerDown(event: MouseEvent) {
   const target = event.target as Node | null
-  if (rootEl.value && target && !rootEl.value.contains(target)) {
-    closePanel()
+  if (!target) return
+  if (rootEl.value?.contains(target) || panelEl.value?.contains(target)) {
+    return
+  }
+  closePanel()
+}
+
+function onWindowChange() {
+  if (showPanel.value) {
+    updatePanelPosition()
   }
 }
 
 onMounted(() => {
   document.addEventListener('pointerdown', onDocumentPointerDown)
+  window.addEventListener('resize', onWindowChange)
+  window.addEventListener('scroll', onWindowChange, true)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocumentPointerDown)
+  window.removeEventListener('resize', onWindowChange)
+  window.removeEventListener('scroll', onWindowChange, true)
   if (debounceTimer) clearTimeout(debounceTimer)
 })
 </script>
 
 <template>
-  <section class="ticket-stub flex-col p-5 sm:p-7 gap-4">
+  <section
+    ref="rootEl"
+    class="ticket-stub flex-col p-5 sm:p-7 gap-4"
+  >
     <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500">
       Hızlı arama
     </p>
 
-    <div
-      ref="rootEl"
-      class="relative flex flex-col sm:flex-row gap-3"
-    >
-      <div class="relative w-full flex-1">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <div
+        ref="inputWrapEl"
+        class="relative w-full flex-1"
+      >
         <UInput
           :id="inputId"
           v-model="keyword"
@@ -170,90 +207,6 @@ onBeforeUnmount(() => {
           @focus="open = keyword.trim().length >= 2"
           @keydown="onInputKeydown"
         />
-
-        <div
-          v-if="showPanel"
-          :id="listboxId"
-          role="listbox"
-          class="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
-        >
-          <ul
-            v-if="results.length"
-            class="max-h-72 overflow-y-auto py-1"
-          >
-            <li
-              v-for="(item, index) in results"
-              :id="item.id"
-              :key="item.id"
-              role="option"
-              :aria-selected="index === activeIndex"
-            >
-              <button
-                type="button"
-                class="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors"
-                :class="index === activeIndex
-                  ? 'bg-neutral-100 dark:bg-neutral-800'
-                  : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/70'"
-                @mouseenter="activeIndex = index"
-                @click="goToResult(item)"
-              >
-                <div class="size-9 flex-none overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800">
-                  <img
-                    v-if="item.image"
-                    :src="item.image"
-                    :alt="item.name"
-                    class="h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                    @error="($event.target as HTMLImageElement).style.display = 'none'"
-                  >
-                  <div
-                    v-else
-                    class="flex h-full w-full items-center justify-center text-neutral-400"
-                  >
-                    <UIcon
-                      :name="item.icon"
-                      class="size-4"
-                    />
-                  </div>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    {{ item.name }}
-                  </p>
-                  <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
-                    {{ item.subtitle }}
-                  </p>
-                </div>
-                <UIcon
-                  :name="item.icon"
-                  class="size-3.5 flex-none text-neutral-400"
-                />
-              </button>
-            </li>
-          </ul>
-
-          <div
-            v-else
-            class="px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400"
-          >
-            Sonuç bulunamadı
-          </div>
-
-          <div class="border-t border-neutral-200 dark:border-neutral-700">
-            <button
-              type="button"
-              class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium text-[#E8432E] hover:bg-neutral-50 dark:hover:bg-neutral-800/70"
-              @click="submitSearch"
-            >
-              <span class="truncate">‘{{ debouncedQuery.trim() }}’ için tüm sonuçları gör</span>
-              <UIcon
-                name="i-lucide-arrow-right"
-                class="size-4 flex-none"
-              />
-            </button>
-          </div>
-        </div>
       </div>
 
       <UButton
@@ -267,4 +220,92 @@ onBeforeUnmount(() => {
       </UButton>
     </div>
   </section>
+
+  <Teleport to="body">
+    <div
+      v-if="showPanel"
+      :id="listboxId"
+      ref="panelEl"
+      role="listbox"
+      class="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+      :style="panelStyle"
+    >
+      <ul
+        v-if="results.length"
+        class="max-h-72 overflow-y-auto py-1"
+      >
+        <li
+          v-for="(item, index) in results"
+          :id="item.id"
+          :key="item.id"
+          role="option"
+          :aria-selected="index === activeIndex"
+        >
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors"
+            :class="index === activeIndex
+              ? 'bg-neutral-100 dark:bg-neutral-800'
+              : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/70'"
+            @mouseenter="activeIndex = index"
+            @click="goToResult(item)"
+          >
+            <div class="size-9 flex-none overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800">
+              <img
+                v-if="item.image"
+                :src="item.image"
+                :alt="item.name"
+                class="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+                @error="($event.target as HTMLImageElement).style.display = 'none'"
+              >
+              <div
+                v-else
+                class="flex h-full w-full items-center justify-center text-neutral-400"
+              >
+                <UIcon
+                  :name="item.icon"
+                  class="size-4"
+                />
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                {{ item.name }}
+              </p>
+              <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                {{ item.subtitle }}
+              </p>
+            </div>
+            <UIcon
+              :name="item.icon"
+              class="size-3.5 flex-none text-neutral-400"
+            />
+          </button>
+        </li>
+      </ul>
+
+      <div
+        v-else
+        class="px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400"
+      >
+        Sonuç bulunamadı
+      </div>
+
+      <div class="border-t border-neutral-200 dark:border-neutral-700">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium text-[#E8432E] hover:bg-neutral-50 dark:hover:bg-neutral-800/70"
+          @click="submitSearch"
+        >
+          <span class="truncate">‘{{ debouncedQuery.trim() }}’ için tüm sonuçları gör</span>
+          <UIcon
+            name="i-lucide-arrow-right"
+            class="size-4 flex-none"
+          />
+        </button>
+      </div>
+    </div>
+  </Teleport>
 </template>
