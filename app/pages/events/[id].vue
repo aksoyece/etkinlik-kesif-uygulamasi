@@ -162,6 +162,24 @@ function toggleFavorite() {
   })
 }
 
+function openTicketPage() {
+  const url = event.value?.ticketUrl
+  if (!url) {
+    return
+  }
+
+  toast.add({
+    title: 'Ticketmaster’a yönlendiriliyorsunuz',
+    description: 'Bilet satışı dış sitededir. “Access restricted” görürseniz bu Ticketmaster kuyruk/bölge kısıtıdır; uygulama hatası değildir.',
+    color: 'neutral',
+    icon: 'i-lucide-external-link'
+  })
+
+  if (import.meta.client) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}
+
 const categoryBadgeClass = computed(() => {
   if (!event.value) return 'bg-neutral-600 text-white'
   const cat = (event.value.category || '').toUpperCase()
@@ -364,13 +382,12 @@ const barcodeStyle = computed(() => {
                 </UButton>
                 <UButton
                   v-if="event.ticketUrl"
-                  :to="event.ticketUrl"
-                  target="_blank"
                   size="lg"
                   trailing-icon="i-lucide-external-link"
                   class="transition-transform duration-200 hover:scale-105 active:scale-95"
+                  @click="openTicketPage"
                 >
-                  Bilet al
+                  Ticketmaster’da bilet al
                 </UButton>
                 <UButton
                   color="neutral"
@@ -395,7 +412,7 @@ const barcodeStyle = computed(() => {
                 </UButton>
                 <UButton
                   color="neutral"
-                  variant="outline"
+                  variant="ghost"
                   icon="i-lucide-share-2"
                   size="lg"
                   class="transition-transform duration-200 hover:scale-105 active:scale-95"
@@ -404,6 +421,13 @@ const barcodeStyle = computed(() => {
                   Paylaş
                 </UButton>
               </div>
+              <p
+                v-if="event.ticketUrl"
+                class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed max-w-xl"
+              >
+                Bilet satışı Ticketmaster üzerinden yapılır. Uygulama yalnızca etkinlik keşfi sağlar;
+                kuyruk, bölge veya IP kısıtları satıcı sitesine aittir.
+              </p>
 
               <!-- 8. Barkod Deseni Çeşitliliği: Detay sayfasındaki bilet stub'ına da dinamik barkod eklendi -->
               <div

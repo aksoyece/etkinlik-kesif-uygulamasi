@@ -58,6 +58,17 @@ Ticketmaster anahtarı tarayıcıya gitmez; yalnızca sunucuda okunur.
 
 Anahtar yoksa `/api/events` 500 döner.
 
+## Teslim notu: “Bilet al” / Ticketmaster kısıtı
+
+Uygulama **etkinlik keşif** amaçlıdır. “Ticketmaster’da bilet al” butonu Discovery API’den gelen resmi bilet URL’sini yeni sekmede açar; ödeme Evently içinde yapılmaz.
+
+UK pazarında Ticketmaster bazen **Queue-it** ile “access has been restricted” gösterebilir (bölge, IP veya kuyruk koruması). Bu satıcı tarafı kısıtıdır; uygulamanın link üretimi veya keşif akışı bozuk demek değildir.
+
+Değerlendirme için kontrol listesi:
+- Keşfet / Etkinlikler listesi ve filtreler
+- Etkinlik detayı, favori, takvim, paylaşım
+- “Ticketmaster’da bilet al”ın dış siteye yönlendirmesi (engel çıkarsa Queue-it ekranı beklenen bir durum olabilir)
+
 ## Komutlar
 
 ```bash
