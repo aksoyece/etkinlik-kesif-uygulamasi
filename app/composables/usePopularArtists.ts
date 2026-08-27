@@ -1,25 +1,23 @@
 import { pickPopularArtists } from '#shared/utils/popularArtists'
 
 const DEFAULT_LIMIT = 12
-/** API sayfa boyutu 20 ile sınırlı; 4 sayfa ≈ 80 müzik etkinliği */
-const DEFAULT_POOL_SIZE = 80
-const PAGE_SIZE = 20
+const PER_CATEGORY_SIZE = 20
 
 /**
- * Popüler sanatçılar yalnızca Music kategorisindeki yaklaşan etkinliklerden türetilir.
- * EventFilters / keşif ile aynı `classificationName: 'Music'` parametresi kullanılır.
+ * UK Discovery havuzundan karışık popüler isimler.
+ * Her ana kategoriden relevance ile çekilir; tek kategoriye (özellikle Family evergreen) kilitlenmez.
  */
-export function usePopularArtists(options?: { limit?: number, poolSize?: number }) {
-  const limit = options?.limit ?? DEFAULT_LIMIT
-  const poolSize = options?.poolSize ?? DEFAULT_POOL_SIZE
-  const pageCount = Math.max(1, Math.ceil(poolSize / PAGE_SIZE))
+const POPULAR_CATEGORIES = ['Music', 'Sports', 'Arts & Theatre'] as const
 
-  const pools = Array.from({ length: pageCount }, (_, index) =>
+export function usePopularArtists(options?: { limit?: number }) {
+  const limit = options?.limit ?? DEFAULT_LIMIT
+
+  const pools = POPULAR_CATEGORIES.map(classificationName =>
     useEvents({
-      classificationName: 'Music',
-      sort: 'date,asc',
-      size: PAGE_SIZE,
-      page: index + 1
+      classificationName,
+      sort: 'relevance,desc',
+      size: PER_CATEGORY_SIZE,
+      page: 1
     })
   )
 

@@ -76,4 +76,40 @@ describe('pickPopularArtists', () => {
 
     expect(artist?.image).toBe('https://cdn.example/event.jpg')
   })
+
+  it('kategoriler arasında karışık sonuç üretir', () => {
+    const pool: EventSummary[] = []
+    for (let i = 0; i < 5; i++) {
+      pool.push(event({
+        id: `m-${i}`,
+        name: `Music ${i}`,
+        localDate: '2026-09-10',
+        category: 'Music',
+        status: 'onsale',
+        attractions: [{ name: `Band ${i}`, genre: 'Rock' }]
+      }))
+      pool.push(event({
+        id: `s-${i}`,
+        name: `Sport ${i}`,
+        localDate: '2026-09-12',
+        category: 'Sports',
+        status: 'onsale',
+        attractions: [{ name: `Team ${i}`, genre: 'Football' }]
+      }))
+      pool.push(event({
+        id: `a-${i}`,
+        name: `Arts ${i}`,
+        localDate: '2026-09-14',
+        category: 'Arts & Theatre',
+        status: 'onsale',
+        attractions: [{ name: `Show ${i}`, genre: 'Theatre' }]
+      }))
+    }
+
+    const artists = pickPopularArtists(pool, 6)
+    const names = artists.map(a => a.name).join(' ')
+    expect(names).toMatch(/Band/)
+    expect(names).toMatch(/Team/)
+    expect(names).toMatch(/Show/)
+  })
 })
