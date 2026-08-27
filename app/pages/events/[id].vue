@@ -634,7 +634,7 @@ const barcodeStyle = computed(() => {
                     v-if="artist.genre"
                     class="font-ticket text-[10px] text-neutral-400 mt-0.5 truncate"
                   >
-                    {{ translateGenre(artist.genre) }}
+                    {{ translateGenre(artist.genre, { subGenre: artist.subGenre, name: artist.name }) }}
                   </p>
                   <UButton
                     v-if="artist.url"
