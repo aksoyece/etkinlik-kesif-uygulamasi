@@ -54,12 +54,20 @@ export function useEvents(params: MaybeRefOrGetter<EventSearchParams>) {
 
 export function useEvent(id: MaybeRefOrGetter<string>) {
   const eventId = computed(() => toValue(id))
+  const nuxtApp = useNuxtApp()
 
   const { data, pending, error, refresh } = useAsyncData(
     () => `event-${eventId.value}`,
     () => $fetch(`/api/events/${encodeURIComponent(eventId.value)}`),
     {
-      watch: [eventId]
+      watch: [eventId],
+      // Route geçişini API bitene kadar bloklama
+      lazy: true,
+      server: true,
+      dedupe: 'defer',
+      getCachedData(key) {
+        return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
+      }
     }
   )
 

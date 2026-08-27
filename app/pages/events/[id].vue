@@ -12,10 +12,18 @@ const favorites = useFavoritesStore()
 
 const id = computed(() => String(route.params.id || ''))
 const { event, pending, error, refresh } = useEvent(id)
-const { venue } = useVenue(computed(() => event.value?.venueId))
+
+// Event payload’da venue yoksa (nadir) ekstra venue API; varsa gereksiz istek yok
+const needsVenueFetch = computed(() =>
+  Boolean(event.value?.venueId && !event.value?.venueDetail)
+)
+const { venue } = useVenue(
+  computed(() => event.value?.venueId),
+  { enabled: needsVenueFetch }
+)
 
 const favorited = computed(() => event.value ? favorites.isFavorite(event.value.id) : false)
-const venueInfo = computed(() => venue.value || event.value?.venueDetail)
+const venueInfo = computed(() => event.value?.venueDetail || venue.value || undefined)
 const mapLink = computed(() => mapsUrl(venueInfo.value))
 const galleryImages = computed(() => uniqueGalleryImages(event.value?.images ?? []))
 const googleCalendarUrl = computed(() => event.value ? buildGoogleCalendarUrl(event.value) : undefined)
@@ -40,6 +48,19 @@ const galleryOpen = computed({
     if (!open) {
       selectedImage.value = null
     }
+  }
+})
+
+/** Galeri / sanatçılar / mekan ekleri — ana bilet boyandıktan sonra */
+const belowFoldReady = ref(false)
+onMounted(() => {
+  const reveal = () => {
+    belowFoldReady.value = true
+  }
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    window.requestIdleCallback(reveal, { timeout: 500 })
+  } else {
+    requestAnimationFrame(() => setTimeout(reveal, 50))
   }
 })
 
@@ -210,9 +231,19 @@ const barcodeStyle = computed(() => {
 
 <template>
   <UContainer class="py-8 sm:py-12">
-    <!-- Yükleme Durumu (Bilet Temalı) -->
+    <UButton
+      to="/events"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-arrow-left"
+      class="mb-6 hover:translate-x-[-4px] transition-transform duration-200"
+    >
+      Etkinliklere dön
+    </UButton>
+
+    <!-- Yükleme: route zaten açık; yalnızca ana içerik skeleton -->
     <div
-      v-if="pending"
+      v-if="pending && !event"
       class="space-y-6"
     >
       <div class="ticket-stub flex flex-col md:flex-row h-96 opacity-75 animate-pulse">
@@ -230,11 +261,18 @@ const barcodeStyle = computed(() => {
           </div>
         </div>
       </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <USkeleton
+          v-for="n in 2"
+          :key="n"
+          class="h-24 rounded-lg"
+        />
+      </div>
     </div>
 
     <!-- 12. Hata Durumu (Bilet Temalı ve Kullanıcı Dostu - Ham Hata Gizlendi) -->
     <div
-      v-else-if="error"
+      v-else-if="error && !event"
       class="max-w-2xl mx-auto ticket-stub flex flex-col items-center text-center p-10 gap-6 border-red-500/20 dark:border-red-500/10"
     >
       <div class="rounded-full bg-red-50 dark:bg-red-950/20 p-4 text-red-500">
@@ -267,16 +305,6 @@ const barcodeStyle = computed(() => {
       v-else-if="event"
       class="space-y-8"
     >
-      <UButton
-        to="/events"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-arrow-left"
-        class="hover:translate-x-[-4px] transition-transform duration-200"
-      >
-        Etkinliklere dön
-      </UButton>
-
       <div class="grid gap-8 lg:grid-cols-[1.4fr_0.8fr]">
         <div class="space-y-8">
           <!-- Ana Bilet Görseli ve Başlık Alanı -->
@@ -286,6 +314,7 @@ const barcodeStyle = computed(() => {
                 :src="event.image || '/placeholder-event.svg'"
                 :alt="event.name"
                 class="h-full w-full object-cover object-center"
+                fetchpriority="high"
                 decoding="async"
               >
               <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -435,7 +464,22 @@ const barcodeStyle = computed(() => {
           </div>
 
           <section
-            v-if="galleryImages.length > 1"
+            v-if="!belowFoldReady && galleryImages.length > 1"
+            class="space-y-4"
+            aria-hidden="true"
+          >
+            <USkeleton class="h-6 w-32" />
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <USkeleton
+                v-for="n in 3"
+                :key="n"
+                class="aspect-[4/3] rounded-lg"
+              />
+            </div>
+          </section>
+
+          <section
+            v-else-if="belowFoldReady && galleryImages.length > 1"
             class="space-y-4"
           >
             <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white">
@@ -484,7 +528,28 @@ const barcodeStyle = computed(() => {
 
           <!-- Sanatçılar / Attractions -->
           <section
-            v-if="event.attractions.length"
+            v-if="!belowFoldReady && event.attractions.length"
+            class="space-y-4"
+            aria-hidden="true"
+          >
+            <USkeleton class="h-6 w-28" />
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div
+                v-for="n in 2"
+                :key="n"
+                class="ticket-stub p-4 items-center gap-4"
+              >
+                <USkeleton class="size-14 rounded-full flex-none" />
+                <div class="flex-1 space-y-2">
+                  <USkeleton class="h-4 w-2/3" />
+                  <USkeleton class="h-3 w-1/3" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section
+            v-else-if="belowFoldReady && event.attractions.length"
             class="space-y-4"
           >
             <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white">
@@ -501,6 +566,7 @@ const barcodeStyle = computed(() => {
                   :alt="artist.name"
                   size="xl"
                   icon="i-lucide-user"
+                  loading="lazy"
                   class="ring-2 ring-primary-500/20"
                 />
                 <div class="flex-1 min-w-0">
@@ -532,7 +598,7 @@ const barcodeStyle = computed(() => {
 
         <!-- Sağ Yan Panel (Mekan ve Oturma Planı) -->
         <aside class="space-y-6">
-          <!-- Mekan Bilgisi (Bilet Temalı) -->
+          <!-- Mekan: isim/adres hemen; ek detaylar below-fold -->
           <div
             v-if="venueInfo"
             class="ticket-stub flex-col p-6 gap-4"
@@ -557,36 +623,46 @@ const barcodeStyle = computed(() => {
                   />
                   <span>{{ venueAddress }}</span>
                 </p>
-                <p
-                  v-if="venueBoxOffice"
-                  class="flex items-start gap-2"
+                <template v-if="belowFoldReady">
+                  <p
+                    v-if="venueBoxOffice"
+                    class="flex items-start gap-2"
+                  >
+                    <UIcon
+                      name="i-lucide-ticket"
+                      class="size-4 mt-0.5 text-primary flex-none"
+                    />
+                    <span>Gişe: {{ venueBoxOffice }}</span>
+                  </p>
+                  <p
+                    v-if="venueParking"
+                    class="flex items-start gap-2"
+                  >
+                    <UIcon
+                      name="i-lucide-car"
+                      class="size-4 mt-0.5 text-primary flex-none"
+                    />
+                    <span>Otopark: {{ venueParking }}</span>
+                  </p>
+                  <p
+                    v-if="venueRules"
+                    class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500 italic"
+                  >
+                    <UIcon
+                      name="i-lucide-info"
+                      class="size-4 mt-0.5 text-neutral-400 flex-none"
+                    />
+                    <span class="whitespace-pre-line">{{ venueRules }}</span>
+                  </p>
+                </template>
+                <div
+                  v-else-if="venueBoxOffice || venueParking || venueRules"
+                  class="space-y-2"
+                  aria-hidden="true"
                 >
-                  <UIcon
-                    name="i-lucide-ticket"
-                    class="size-4 mt-0.5 text-primary flex-none"
-                  />
-                  <span>Gişe: {{ venueBoxOffice }}</span>
-                </p>
-                <p
-                  v-if="venueParking"
-                  class="flex items-start gap-2"
-                >
-                  <UIcon
-                    name="i-lucide-car"
-                    class="size-4 mt-0.5 text-primary flex-none"
-                  />
-                  <span>Otopark: {{ venueParking }}</span>
-                </p>
-                <p
-                  v-if="venueRules"
-                  class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500 italic"
-                >
-                  <UIcon
-                    name="i-lucide-info"
-                    class="size-4 mt-0.5 text-neutral-400 flex-none"
-                  />
-                  <span class="whitespace-pre-line">{{ venueRules }}</span>
-                </p>
+                  <USkeleton class="h-4 w-full" />
+                  <USkeleton class="h-4 w-5/6" />
+                </div>
               </div>
 
               <div class="flex flex-wrap gap-2 pt-2">
@@ -619,7 +695,16 @@ const barcodeStyle = computed(() => {
 
           <!-- Oturma Planı (Bilet Temalı) -->
           <div
-            v-if="event.seatmap"
+            v-if="!belowFoldReady && event.seatmap"
+            class="ticket-stub flex-col p-6 gap-4"
+            aria-hidden="true"
+          >
+            <USkeleton class="h-6 w-32" />
+            <USkeleton class="h-48 w-full rounded-lg" />
+          </div>
+
+          <div
+            v-else-if="belowFoldReady && event.seatmap"
             class="ticket-stub flex-col p-6 gap-4"
           >
             <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white border-b border-dashed border-neutral-200 dark:border-neutral-800 pb-2">
@@ -630,6 +715,8 @@ const barcodeStyle = computed(() => {
                 :src="event.seatmap"
                 alt="Oturma planı"
                 class="w-full hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                decoding="async"
               >
             </div>
           </div>
@@ -637,10 +724,12 @@ const barcodeStyle = computed(() => {
       </div>
     </article>
 
-    <SimilarEvents
-      v-if="event"
-      :event="event"
-    />
+    <ClientOnly>
+      <SimilarEvents
+        v-if="event"
+        :event="event"
+      />
+    </ClientOnly>
 
     <UModal
       v-model:open="galleryOpen"
@@ -652,6 +741,8 @@ const barcodeStyle = computed(() => {
           :src="selectedImage"
           :alt="event?.name"
           class="w-full h-auto object-contain max-h-[80vh] bg-black"
+          loading="lazy"
+          decoding="async"
         >
       </template>
     </UModal>

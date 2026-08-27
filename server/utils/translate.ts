@@ -181,14 +181,13 @@ export async function localizeEventCopy<T extends {
     boxOffice?: string
   }
 }>(detail: T): Promise<T> {
-  const [info, pleaseNote] = await Promise.all([
+  const [info, pleaseNote, venueDetail] = await Promise.all([
     translateToTurkish(detail.info, { force: true }),
-    translateToTurkish(detail.pleaseNote, { force: true })
+    translateToTurkish(detail.pleaseNote, { force: true }),
+    detail.venueDetail
+      ? localizeVenueCopy(detail.venueDetail)
+      : Promise.resolve(detail.venueDetail)
   ])
-
-  const venueDetail = detail.venueDetail
-    ? await localizeVenueCopy(detail.venueDetail)
-    : detail.venueDetail
 
   return {
     ...detail,

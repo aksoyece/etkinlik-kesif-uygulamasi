@@ -5,7 +5,24 @@ const props = defineProps<{
   event: EventDetail
 }>()
 
-const { similar, pending, visible, refresh, error } = useSimilarEvents(() => props.event)
+const deferReady = ref(false)
+
+onMounted(() => {
+  const markReady = () => {
+    deferReady.value = true
+  }
+
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    window.requestIdleCallback(markReady, { timeout: 900 })
+  } else {
+    setTimeout(markReady, 120)
+  }
+})
+
+const { similar, pending, visible, refresh, error } = useSimilarEvents(
+  () => props.event,
+  { deferred: () => deferReady.value }
+)
 </script>
 
 <template>

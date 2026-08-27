@@ -17,12 +17,19 @@ const categoryBadgeClass = computed(() => {
   if (cat.includes('FILM')) return 'bg-[#E8432E] text-white'
   return 'bg-neutral-500 text-white'
 })
+
+function warmDetail() {
+  prefetchEventDetail(props.event.id)
+}
 </script>
 
 <template>
   <NuxtLink
     :to="`/events/${event.id}`"
+    prefetch
     class="ticket-stub group flex-col h-full overflow-hidden"
+    @pointerenter="warmDetail"
+    @focus="warmDetail"
   >
     <div class="relative aspect-[16/10] w-full overflow-hidden flex-none">
       <img

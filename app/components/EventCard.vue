@@ -75,13 +75,20 @@ function toggleFavorite() {
     icon: added ? 'i-lucide-heart' : 'i-lucide-heart-off'
   })
 }
+
+function warmDetail() {
+  prefetchEventDetail(props.event.id)
+}
 </script>
 
 <template>
   <article class="ticket-stub group relative flex-col sm:flex-row h-full">
     <NuxtLink
       :to="`/events/${event.id}`"
+      prefetch
       class="flex flex-col sm:flex-row flex-1 min-w-0 h-full text-inherit no-underline"
+      @pointerenter="warmDetail"
+      @focus="warmDetail"
     >
       <div class="relative block w-full sm:w-[40%] aspect-[4/3] overflow-hidden flex-none">
         <img
