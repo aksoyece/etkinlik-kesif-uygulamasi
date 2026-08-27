@@ -232,14 +232,19 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
   const venue = event._embedded?.venues?.[0]
   const classification = getPrimaryClassification(event.classifications)
   const eventImage = getBestEventImage(event.images)
+  const rawAttractions = event._embedded?.attractions ?? []
 
-  const attractions = (event._embedded?.attractions ?? []).map((attraction) => {
+  const attractions = rawAttractions.map((attraction) => {
     const mapped = mapAttraction(attraction)
     const hasOwnImage = Boolean(mapped.image) && mapped.image !== EVENT_IMAGE_PLACEHOLDER
-    return {
-      ...mapped,
-      image: hasOwnImage ? mapped.image : (eventImage !== EVENT_IMAGE_PLACEHOLDER ? eventImage : mapped.image)
+    if (hasOwnImage) {
+      return mapped
     }
+    // Tek isimde event afişi güvenli; maç afişi (2+ attraction) yanlış logoya yapışmasın
+    if (rawAttractions.length === 1 && eventImage !== EVENT_IMAGE_PLACEHOLDER) {
+      return { ...mapped, image: eventImage }
+    }
+    return { ...mapped, image: undefined }
   })
 
   return {

@@ -70,11 +70,44 @@ describe('pickPopularArtists', () => {
         localDate: '2026-11-01',
         status: 'onsale',
         image: 'https://cdn.example/event.jpg',
-        attractions: [{ name: 'Band', image: EVENT_IMAGE_PLACEHOLDER }]
+        attractions: [{ name: 'Band', image: 'https://cdn.example/band.jpg' }]
       })
     ])
 
-    expect(artist?.image).toBe('https://cdn.example/event.jpg')
+    expect(artist?.image).toBe('https://cdn.example/band.jpg')
+  })
+
+  it('çoklu attraction’da event afişini rakip logosu olarak kullanmaz', () => {
+    const artists = pickPopularArtists([
+      event({
+        id: 'match-1',
+        name: 'Crystal Palace V Tottenham',
+        localDate: '2026-09-01',
+        category: 'Sports',
+        status: 'onsale',
+        image: 'https://cdn.example/crystal-palace-poster.jpg',
+        attractions: [
+          { name: 'Crystal Palace', image: 'https://cdn.example/crystal-palace-poster.jpg' },
+          { name: 'Tottenham Hotspur', image: 'https://cdn.example/crystal-palace-poster.jpg' }
+        ]
+      }),
+      event({
+        id: 'match-2',
+        name: 'Tottenham V Arsenal',
+        localDate: '2026-10-01',
+        category: 'Sports',
+        status: 'onsale',
+        image: 'https://cdn.example/spurs-poster.jpg',
+        attractions: [
+          { name: 'Tottenham Hotspur', image: 'https://cdn.example/tottenham-logo.jpg' },
+          { name: 'Arsenal', image: 'https://cdn.example/arsenal-logo.jpg' }
+        ]
+      })
+    ], 5)
+
+    const spurs = artists.find(a => a.name === 'Tottenham Hotspur')
+    expect(spurs?.image).toBe('https://cdn.example/tottenham-logo.jpg')
+    expect(spurs?.image).not.toBe('https://cdn.example/crystal-palace-poster.jpg')
   })
 
   it('kategoriler arasında karışık sonuç üretir', () => {
@@ -86,7 +119,7 @@ describe('pickPopularArtists', () => {
         localDate: '2026-09-10',
         category: 'Music',
         status: 'onsale',
-        attractions: [{ name: `Band ${i}`, genre: 'Rock' }]
+        attractions: [{ name: `Band ${i}`, genre: 'Rock', image: `https://cdn.example/band-${i}.jpg` }]
       }))
       pool.push(event({
         id: `s-${i}`,
@@ -94,7 +127,7 @@ describe('pickPopularArtists', () => {
         localDate: '2026-09-12',
         category: 'Sports',
         status: 'onsale',
-        attractions: [{ name: `Team ${i}`, genre: 'Football' }]
+        attractions: [{ name: `Team ${i}`, genre: 'Football', image: `https://cdn.example/team-${i}.jpg` }]
       }))
       pool.push(event({
         id: `a-${i}`,
@@ -102,7 +135,7 @@ describe('pickPopularArtists', () => {
         localDate: '2026-09-14',
         category: 'Arts & Theatre',
         status: 'onsale',
-        attractions: [{ name: `Show ${i}`, genre: 'Theatre' }]
+        attractions: [{ name: `Show ${i}`, genre: 'Theatre', image: `https://cdn.example/show-${i}.jpg` }]
       }))
     }
 

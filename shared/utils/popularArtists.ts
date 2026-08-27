@@ -26,6 +26,25 @@ function isRealImage(url?: string): boolean {
   return Boolean(url) && url !== EVENT_IMAGE_PLACEHOLDER
 }
 
+/**
+ * Attraction’a özel görsel.
+ * Çoklu attraction’lı etkinlikte event afişine düşülmez (rakip logosu karışmasın).
+ */
+function resolveArtistImage(
+  attractionImage: string | undefined,
+  event: EventSummary
+): string | undefined {
+  if (!isRealImage(attractionImage)) {
+    return undefined
+  }
+  const attractionCount = event.attractions?.length ?? 0
+  // Maç afişi birden fazla takıma kopyalanmışsa güvenme
+  if (attractionCount > 1 && event.image && attractionImage === event.image) {
+    return undefined
+  }
+  return attractionImage
+}
+
 type ArtistAcc = {
   id: string
   name: string
@@ -52,9 +71,7 @@ function rankArtists(events: EventSummary[]): ArtistAcc[] {
       const existing = byName.get(key)
       const label = resolveLabel(attraction.genre, event.genre, event.category)
       const category = categoryBucket(event.category)
-      const image = isRealImage(attraction.image)
-        ? attraction.image
-        : (isRealImage(event.image) ? event.image : undefined)
+      const image = resolveArtistImage(attraction.image, event)
 
       if (!existing) {
         byName.set(key, {
@@ -75,7 +92,8 @@ function rankArtists(events: EventSummary[]): ArtistAcc[] {
         existing.eventCount += 1
       }
 
-      if (!isRealImage(existing.image) && image) {
+      // Doğru logo bulunduysa mevcut boş / şüpheli görseli yükselt
+      if (image && !isRealImage(existing.image)) {
         existing.image = image
       }
 
@@ -84,6 +102,9 @@ function rankArtists(events: EventSummary[]): ArtistAcc[] {
           existing.soonestDate = event.localDate
           existing.label = label
           existing.category = category
+          if (image) {
+            existing.image = image
+          }
         }
       }
     }
@@ -140,8 +161,11 @@ function diversifyByCategory(ranked: ArtistAcc[], limit: number): ArtistAcc[] {
 /**
  * Yaklaşan etkinliklerden popüler sanatçı / attraction listesi üretir.
  * Sıra: etkinlik sayısı ↓, en yakın tarih ↑; çıktı kategoriler arasında çeşitlendirilir.
+ * Yanlış logo riski olan (görselsiz) isimler mümkünse elenir.
  */
 export function pickPopularArtists(events: EventSummary[], limit = 12): PopularArtist[] {
   const ranked = rankArtists(events)
-  return diversifyByCategory(ranked, limit).map(({ eventIds: _ids, category: _category, ...artist }) => artist)
+  const withLogo = ranked.filter(artist => isRealImage(artist.image))
+  const pool = withLogo.length >= Math.min(limit, 6) ? withLogo : ranked
+  return diversifyByCategory(pool, limit).map(({ eventIds: _ids, category: _category, ...artist }) => artist)
 }
