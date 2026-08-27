@@ -14,8 +14,17 @@ const favorited = computed(() => favorites.isFavorite(props.event.id))
 const isHeartAnimating = ref(false)
 
 const genre = computed(() => ('genre' in props.event ? props.event.genre : undefined))
-const typeLabel = computed(() => resolveEventTypeLabel(props.event.category, genre.value))
-const typeKey = computed(() => resolveEventTypeKey(props.event.category, genre.value))
+const subGenre = computed(() => ('subGenre' in props.event ? props.event.subGenre : undefined))
+const typeLabel = computed(() => resolveEventTypeLabel(props.event.category, genre.value, {
+  subGenre: subGenre.value,
+  name: props.event.name
+}))
+const typeKey = computed(() => {
+  if (typeLabel.value === 'Amerikan Futbolu') {
+    return 'Football'
+  }
+  return resolveEventTypeKey(props.event.category, genre.value)
+})
 
 const when = computed(() => props.event.dateLabel || 'Tarih açıklanacak')
 const venueName = computed(() => props.event.venue || 'Mekan açıklanacak')

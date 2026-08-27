@@ -132,7 +132,8 @@ export function toTicketmasterQuery(params: EventSearchParams): Record<string, s
   if (params.city) query.city = params.city
   if (params.classificationName) query.classificationName = params.classificationName
 
-  query.startDateTime = toTicketmasterDateTime(params.startDate) || nowTicketmasterDateTime()
+  // Bugün / tarih yok: şu an — aynı gün geçmiş saatler gelmesin
+  query.startDateTime = resolveStartDateTime(params.startDate)
 
   const endDateTime = toTicketmasterDateTime(params.endDate, true)
   if (endDateTime) {
@@ -140,6 +141,21 @@ export function toTicketmasterQuery(params: EventSearchParams): Record<string, s
   }
 
   return query
+}
+
+/** Bugün seçiliyse (veya tarih yoksa) anlık UTC; diğer günlerde gün başı */
+export function resolveStartDateTime(startDate?: string): string {
+  const now = nowTicketmasterDateTime()
+  if (!startDate) {
+    return now
+  }
+
+  const todayUtc = new Date().toISOString().slice(0, 10)
+  if (startDate === todayUtc) {
+    return now
+  }
+
+  return toTicketmasterDateTime(startDate) || now
 }
 
 export function capTotalResults(totalElements = 0, size = PAGE_SIZE): number {

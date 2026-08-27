@@ -1,5 +1,6 @@
 import type { EventSummary, PopularArtist } from '../types/event'
 import { EVENT_IMAGE_PLACEHOLDER } from './event'
+import { isAmericanFootballContext } from './labels'
 
 function normalizeArtistName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, ' ')
@@ -10,8 +11,19 @@ function isUsableEvent(event: EventSummary): boolean {
   return status !== 'cancelled' && status !== 'offsale'
 }
 
-function resolveLabel(attractionGenre?: string, eventGenre?: string, eventCategory?: string): string {
-  const raw = attractionGenre || eventGenre || eventCategory || 'Genel'
+function resolveLabel(
+  attraction: { genre?: string, subGenre?: string, name?: string },
+  event: EventSummary
+): string {
+  if (isAmericanFootballContext({
+    genre: attraction.genre || event.genre,
+    subGenre: attraction.subGenre || event.subGenre,
+    name: attraction.name,
+    extra: [event.name]
+  })) {
+    return 'NFL'
+  }
+  const raw = attraction.genre || event.genre || event.category || 'Genel'
   if (raw.toUpperCase() === 'UNDEFINED') return 'Genel'
   return raw
 }
@@ -69,7 +81,7 @@ function rankArtists(events: EventSummary[]): ArtistAcc[] {
 
       const key = normalizeArtistName(name)
       const existing = byName.get(key)
-      const label = resolveLabel(attraction.genre, event.genre, event.category)
+      const label = resolveLabel(attraction, event)
       const category = categoryBucket(event.category)
       const image = resolveArtistImage(attraction.image, event)
 

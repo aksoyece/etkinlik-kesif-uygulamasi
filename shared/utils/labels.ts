@@ -50,6 +50,9 @@ const GENRE_TR: Record<string, string> = {
   'Miscellaneous': 'Diğer',
   'Undefined': 'Genel',
   'Football': 'Futbol',
+  'Soccer': 'Futbol',
+  'NFL': 'Amerikan Futbolu',
+  'American Football': 'Amerikan Futbolu',
   'Basketball': 'Basketbol',
   'Hockey': 'Hokey',
   'Baseball': 'Beyzbol',
@@ -80,6 +83,38 @@ const STATUS_TR: Record<string, string> = {
 
 /** Arayüz sayı / tarih locale’i — pazar kodundan bağımsız her zaman TR */
 export const UI_LOCALE = 'tr-TR'
+
+/** NFL / Amerikan futbolu bağlamı — UK’de genre çoğu zaman “Football” */
+export function isAmericanFootballContext(parts: {
+  genre?: string | null
+  subGenre?: string | null
+  name?: string | null
+  extra?: Array<string | null | undefined>
+} = {}): boolean {
+  const blob = [
+    parts.genre,
+    parts.subGenre,
+    parts.name,
+    ...(parts.extra || [])
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toUpperCase()
+
+  if (!blob) {
+    return false
+  }
+  if (/\bNFL\b/.test(blob)) {
+    return true
+  }
+  if (/AMERICAN\s+FOOTBALL/.test(blob)) {
+    return true
+  }
+  if (/\bSUPER\s*BOWL\b/.test(blob)) {
+    return true
+  }
+  return false
+}
 
 export function translateCategory(name?: string | null): string {
   if (!name?.trim()) {
@@ -128,8 +163,22 @@ export function resolveEventTypeKey(category?: string | null, genre?: string | n
 
 /**
  * Rozet + Tür satırı aynı metni gösterir (aynı kaynak + çeviri).
+ * NFL bağlamında “Spor/Futbol” yerine Amerikan Futbolu.
  */
-export function resolveEventTypeLabel(category?: string | null, genre?: string | null): string {
+export function resolveEventTypeLabel(
+  category?: string | null,
+  genre?: string | null,
+  options?: { subGenre?: string | null, name?: string | null }
+): string {
+  if (isAmericanFootballContext({
+    genre,
+    subGenre: options?.subGenre,
+    name: options?.name,
+    extra: [category]
+  })) {
+    return 'Amerikan Futbolu'
+  }
+
   const key = resolveEventTypeKey(category, genre)
   if (!key) {
     return 'Genel'
@@ -150,10 +199,21 @@ export function resolveEventTypeLabel(category?: string | null, genre?: string |
     return translateCategory(key)
   }
 
-  return translateGenre(key)
+  return translateGenre(key, { subGenre: options?.subGenre, name: options?.name })
 }
 
-export function translateGenre(name?: string | null): string {
+export function translateGenre(
+  name?: string | null,
+  options?: { subGenre?: string | null, name?: string | null }
+): string {
+  if (isAmericanFootballContext({
+    genre: name,
+    subGenre: options?.subGenre,
+    name: options?.name
+  })) {
+    return 'Amerikan Futbolu'
+  }
+
   if (!name?.trim()) {
     return 'Genel'
   }
@@ -170,6 +230,7 @@ export function translateGenre(name?: string | null): string {
   if (upper.includes('ALTERNATIVE')) return 'Alternatif'
   if (upper.includes('THEATRE') || upper.includes('THEATER')) return 'Tiyatro'
   if (upper.includes('CHILDREN') || upper.includes('KIDS')) return 'Çocuk'
+  if (upper === 'NFL' || upper.includes('AMERICAN FOOTBALL')) return 'Amerikan Futbolu'
   return trimmed
 }
 

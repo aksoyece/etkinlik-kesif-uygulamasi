@@ -419,7 +419,8 @@ export function mapAttraction(attraction: TicketmasterAttraction): AttractionSum
     name: attraction.name || 'Sanatçı',
     url: attraction.url,
     image: getBestAttractionImage(attraction.images),
-    genre: classification?.genre?.name || classification?.segment?.name
+    genre: classification?.genre?.name || classification?.segment?.name,
+    subGenre: classification?.subGenre?.name
   }
 }
 
@@ -458,6 +459,7 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
     venueDetail: mapVenue(venue, { includeProse: false }),
     category: classification?.segment?.name,
     genre: classification?.genre?.name,
+    subGenre: classification?.subGenre?.name,
     priceLabel: formatPriceRange(event.priceRanges),
     status: event.dates?.status?.code,
     attractions: attractions.length ? attractions : undefined

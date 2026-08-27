@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import type { EventSummary } from '#shared/types/event'
-import { translateCategory } from '#shared/utils/labels'
+import { resolveEventTypeLabel } from '#shared/utils/labels'
 
 const props = defineProps<{
   event: EventSummary
 }>()
 
-const categoryLabel = computed(() => translateCategory(props.event.category))
+const categoryLabel = computed(() => resolveEventTypeLabel(
+  props.event.category,
+  props.event.genre,
+  { subGenre: props.event.subGenre, name: props.event.name }
+))
 
 const categoryBadgeClass = computed(() => {
-  const cat = (props.event.category || '').toUpperCase()
+  const cat = (props.event.category || props.event.genre || '').toUpperCase()
+  if (categoryLabel.value === 'Amerikan Futbolu' || cat.includes('FOOTBALL') || cat.includes('NFL')) {
+    return 'bg-blue-600 text-white'
+  }
   if (cat.includes('MUSIC')) return 'bg-amber-500 text-white'
   if (cat.includes('SPORTS')) return 'bg-blue-600 text-white'
   if (cat.includes('ARTS') || cat.includes('THEATRE') || cat.includes('THEATER')) return 'bg-purple-600 text-white'

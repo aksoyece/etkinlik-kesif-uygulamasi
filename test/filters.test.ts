@@ -65,6 +65,28 @@ describe('filtre yardımcıları', () => {
     expect(query.page).toBe('1')
     expect(query.size).toBe(String(PAGE_SIZE))
     expect(query.startDateTime).toBeTruthy()
+    // Tarih yoksa şu an (gün başı değil) — geçmiş saatler elensin
+    expect(query.startDateTime).not.toMatch(/T00:00:00Z$/)
+  })
+
+  it('bugünün startDate seçiminde startDateTime anlık olur', () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const query = toTicketmasterQuery(toSearchParams({
+      ...defaultFilterState(),
+      startDate: today
+    }, 1))
+
+    expect(query.startDateTime).not.toBe(`${today}T00:00:00Z`)
+    expect(query.startDateTime.startsWith(today)).toBe(true)
+  })
+
+  it('gelecek gün startDate’te gün başını kullanır', () => {
+    const query = toTicketmasterQuery(toSearchParams({
+      ...defaultFilterState(),
+      startDate: '2099-06-15'
+    }, 1))
+
+    expect(query.startDateTime).toBe('2099-06-15T00:00:00Z')
   })
 
   it('toplam sonucu API limitine göre keser', () => {

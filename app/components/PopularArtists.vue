@@ -9,7 +9,7 @@ const canScrollPrev = ref(false)
 const canScrollNext = ref(false)
 
 function artistLabel(artist: PopularArtist) {
-  const genre = translateGenre(artist.label)
+  const genre = translateGenre(artist.label, { name: artist.name })
   if (genre && genre !== 'Genel') return genre
   return translateCategory(artist.label)
 }
@@ -61,7 +61,7 @@ watch(artists, async () => {
           Trend
         </p>
         <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
-          Popüler sanatçılar
+          Popüler isimler
         </h2>
         <p class="text-sm text-neutral-500 dark:text-neutral-400">
           UK’deki yaklaşan etkinliklerden öne çıkan isimler.
@@ -75,7 +75,7 @@ watch(artists, async () => {
           icon="i-lucide-chevron-left"
           size="sm"
           :disabled="!canScrollPrev"
-          aria-label="Önceki sanatçılar"
+          aria-label="Önceki isimler"
           @click="scrollByCard(-1)"
         />
         <UButton
@@ -84,7 +84,7 @@ watch(artists, async () => {
           icon="i-lucide-chevron-right"
           size="sm"
           :disabled="!canScrollNext"
-          aria-label="Sonraki sanatçılar"
+          aria-label="Sonraki isimler"
           @click="scrollByCard(1)"
         />
       </div>
@@ -112,7 +112,7 @@ watch(artists, async () => {
       class="ticket-stub flex-col items-center text-center p-6 gap-3"
     >
       <p class="text-sm text-neutral-500">
-        Popüler sanatçılar yüklenemedi.
+        Popüler isimler yüklenemedi.
       </p>
       <UButton
         color="primary"

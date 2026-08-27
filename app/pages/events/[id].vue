@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { mapsUrl, toFavoriteEvent, uniqueGalleryImages } from '#shared/utils/event'
 import { buildGoogleCalendarUrl, buildIcsContent } from '#shared/utils/calendar'
-import { translateCategory, translateGenre, translateStatus } from '#shared/utils/labels'
+import { resolveEventTypeLabel, translateGenre, translateStatus } from '#shared/utils/labels'
 import { isValidTicketUrl } from '#shared/utils/ticketUrl'
 
 const route = useRoute()
@@ -45,8 +45,21 @@ const galleryImages = computed(() => uniqueGalleryImages(event.value?.images ?? 
 const googleCalendarUrl = computed(() => event.value ? buildGoogleCalendarUrl(event.value) : undefined)
 const pageUrl = computed(() => `${requestUrl.origin}${route.fullPath}`)
 
-const categoryLabel = computed(() => translateCategory(event.value?.category))
-const genreLabel = computed(() => translateGenre(event.value?.genre))
+const categoryLabel = computed(() => resolveEventTypeLabel(
+  event.value?.category,
+  event.value?.genre,
+  { subGenre: event.value?.subGenre, name: event.value?.name }
+))
+const genreLabel = computed(() => {
+  const label = translateGenre(event.value?.genre, {
+    subGenre: event.value?.subGenre,
+    name: event.value?.name
+  })
+  if (!label || label === 'Genel' || label === categoryLabel.value) {
+    return undefined
+  }
+  return label
+})
 const statusText = computed(() => translateStatus(event.value?.status))
 /** Orijinal TM prose (İngilizce) — makine çevirisi yok */
 const infoText = computed(() => event.value?.info || undefined)
@@ -231,13 +244,14 @@ function toggleFavorite() {
 
 const categoryBadgeClass = computed(() => {
   if (!event.value) return 'bg-neutral-600 text-white'
-  const cat = (event.value.category || '').toUpperCase()
-  if (cat.includes('MUSIC')) return 'bg-amber-500 text-white' // Konser: Turuncu
-  if (cat.includes('SPORTS')) return 'bg-blue-600 text-white' // Spor: Mavi
-  if (cat.includes('ARTS') || cat.includes('THEATRE')) return 'bg-purple-600 text-white' // Tiyatro/Sanat: Mor
-  if (cat.includes('FAMILY')) return 'bg-emerald-600 text-white' // Aile: Yeşil
-  if (cat.includes('FILM')) return 'bg-[#E8432E] text-white' // Film: Kırmızı (En öne çıkan kategori)
-  return 'bg-neutral-500 text-white' // Miscellaneous / Diğer: Gri
+  if (categoryLabel.value === 'Amerikan Futbolu') return 'bg-blue-600 text-white'
+  const cat = (event.value.category || event.value.genre || '').toUpperCase()
+  if (cat.includes('MUSIC')) return 'bg-amber-500 text-white'
+  if (cat.includes('SPORTS') || cat.includes('FOOTBALL')) return 'bg-blue-600 text-white'
+  if (cat.includes('ARTS') || cat.includes('THEATRE')) return 'bg-purple-600 text-white'
+  if (cat.includes('FAMILY')) return 'bg-emerald-600 text-white'
+  if (cat.includes('FILM')) return 'bg-[#E8432E] text-white'
+  return 'bg-neutral-500 text-white'
 })
 
 // 8. Barkod Deseni Çeşitliliği: Detay sayfasındaki bilet için de deterministik barkod üretilir

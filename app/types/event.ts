@@ -158,6 +158,8 @@ export interface EventSummary {
   venueDetail?: VenueSummary
   category?: string
   genre?: string
+  /** Ticketmaster classification subGenre (ör. NFL) */
+  subGenre?: string
   priceLabel?: string
   /** Ticketmaster dates.status.code (onsale, offsale, cancelled, …) */
   status?: string
@@ -171,6 +173,7 @@ export interface AttractionSummary {
   url?: string
   image?: string
   genre?: string
+  subGenre?: string
 }
 
 /** Anasayfa “Popüler Sanatçılar” kartı — event attractions’tan türetilir */

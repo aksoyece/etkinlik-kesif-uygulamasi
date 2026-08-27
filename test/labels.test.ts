@@ -19,6 +19,9 @@ describe('etiket çevirileri', () => {
     expect(translateGenre('Jazz')).toBe('Caz')
     expect(translateGenre('Classical')).toBe('Klasik Müzik')
     expect(translateGenre('Undefined')).toBe('Genel')
+    expect(translateGenre('Football')).toBe('Futbol')
+    expect(translateGenre('Football', { name: 'NFL London 2026' })).toBe('Amerikan Futbolu')
+    expect(translateGenre('Football', { subGenre: 'NFL' })).toBe('Amerikan Futbolu')
   })
 
   it('Miscellaneous segment’te genre ile tutarlı tür etiketi üretir', () => {
@@ -26,6 +29,7 @@ describe('etiket çevirileri', () => {
     expect(resolveEventTypeLabel('Miscellaneous', 'Family')).toBe('Aile')
     expect(resolveEventTypeLabel('Music', 'Jazz')).toBe('Müzik')
     expect(resolveEventTypeLabel('Sports', 'Football')).toBe('Spor')
+    expect(resolveEventTypeLabel('Sports', 'Football', { name: 'NFL London 2026' })).toBe('Amerikan Futbolu')
   })
 
   it('durum kodlarını Türkçeleştirir', () => {
