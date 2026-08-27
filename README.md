@@ -9,31 +9,6 @@ Ticketmaster Discovery API 2.0 ile Birleşik Krallık (UK / `countryCode=GB`) pa
 
 Aktif market `shared/utils/market.ts` üzerinden yönetilir; TR tanımı ileride seçenek olarak hazırdır.
 
-## Task gereksinimleri
-
-| # | Gereksinim | Durum |
-|---|------------|--------|
-| 1 | Ana sayfada yaklaşan etkinlikler listelenir | Tamam — öne çıkan / bu hafta seçkisi + hızlı arama |
-| 2 | Etkinlikler API üzerinden alınır | Tamam — `/api/events`, Ticketmaster Discovery |
-| 3 | Kartlarda isim, görsel, tarih, şehir, mekan, kategori | Tamam — `EventCard` |
-| 4 | Etkinlik arama | Tamam — keyword + anasayfa autocomplete |
-| 5 | Şehir, kategori ve tarih filtreleri | Tamam — `EventFilters` |
-| 6 | Sıralama | Tamam — tarih artan/azalan vb. |
-| 7 | Pagination | Tamam — `UPagination` |
-| 8 | Etkinlik detay sayfası | Tamam — `/events/[id]` |
-| 9 | Detayda etkinlik, sanatçı ve mekan bilgisi | Tamam |
-| 10 | Favorilere ekleme | Tamam |
-| 11 | Favoriler Pinia + Local Storage | Tamam — `stores/favorites.ts` |
-| 12 | API işlemleri composable yapısında | Tamam — `useEvents`, `useEvent`, `useVenue`… |
-| 13 | Loading / error / empty state | Tamam — liste, detay, anasayfa |
-| 14 | Nuxt UI componentleri | Tamam |
-| 15 | Responsive tasarım | Tamam |
-| 16 | Dark / light mode | Tamam — `UColorModeButton` |
-| 17 | TypeScript | Tamam |
-| 18 | Form / etkileşim validation | Tamam — Zod + `UForm` |
-| 19 | Temel testler | Tamam — Vitest (`npm run test`) |
-| 20 | GitHub + README | Tamam |
-
 ## Özellikler
 
 - Ticketmaster Discovery API üzerinden gerçek ve yaklaşan etkinlikleri listeleme
