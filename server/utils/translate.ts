@@ -219,21 +219,27 @@ type VenueLocalizeFields = {
   boxOffice?: string
   boxOfficePhone?: string
   name?: string
+  url?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  latitude?: string
+  longitude?: string
+  id?: string
 }
 
-/** Adres / ülke / URL — makine çevirisi yok, anında */
+/** Adres / ülke / URL / telefon — anında; prose metinleri kabukta yok */
 export function localizeVenueShell<T extends VenueLocalizeFields>(venue: T): T {
   return {
     ...venue,
     address: localizeAddressLine(venue.address) || venue.address,
     country: localizeCountryName(venue.country) || venue.country,
     boxOfficePhone: venue.boxOfficePhone,
-    // Prose: sözlük/fallback; makine çevirisi locale aşamasında
-    parkingDetail: venue.parkingDetail ? safeFallback(venue.parkingDetail) : undefined,
-    generalRule: venue.generalRule ? safeFallback(venue.generalRule) : undefined,
-    childRule: venue.childRule ? safeFallback(venue.childRule) : undefined,
-    accessibilityDetail: venue.accessibilityDetail ? safeFallback(venue.accessibilityDetail) : undefined,
-    boxOffice: venue.boxOffice ? safeFallback(venue.boxOffice) : undefined
+    parkingDetail: undefined,
+    generalRule: undefined,
+    childRule: undefined,
+    accessibilityDetail: undefined,
+    boxOffice: undefined
   }
 }
 
@@ -284,25 +290,76 @@ type EventLocalizeFields = {
   venue?: string
   venueDetail?: VenueLocalizeFields
   attractions?: Array<{ name: string, url?: string }>
+  pendingProse?: {
+    info?: boolean
+    pleaseNote?: boolean
+    parkingDetail?: boolean
+    generalRule?: boolean
+    childRule?: boolean
+    accessibilityDetail?: boolean
+    boxOffice?: boolean
+  }
+  rawProse?: {
+    info?: string
+    pleaseNote?: string
+    parkingDetail?: string
+    generalRule?: string
+    childRule?: string
+    accessibilityDetail?: string
+    boxOffice?: string
+  }
 }
 
-/** Detay kabuğu: mekan/adres/seatmap hemen; makine çevirisi yok */
+function buildPendingAndRawProse<T extends EventLocalizeFields>(detail: T) {
+  const venue = detail.venueDetail
+  const pendingProse = {
+    info: Boolean(detail.info?.trim()),
+    pleaseNote: Boolean(detail.pleaseNote?.trim()),
+    parkingDetail: Boolean(venue?.parkingDetail?.trim()),
+    generalRule: Boolean(venue?.generalRule?.trim()),
+    childRule: Boolean(venue?.childRule?.trim()),
+    accessibilityDetail: Boolean(venue?.accessibilityDetail?.trim()),
+    boxOffice: Boolean(venue?.boxOffice?.trim())
+  }
+  const hasPending = Object.values(pendingProse).some(Boolean)
+
+  if (!hasPending) {
+    return { pendingProse: undefined as undefined, rawProse: undefined as undefined }
+  }
+
+  return {
+    pendingProse,
+    rawProse: {
+      info: detail.info,
+      pleaseNote: detail.pleaseNote,
+      parkingDetail: venue?.parkingDetail,
+      generalRule: venue?.generalRule,
+      childRule: venue?.childRule,
+      accessibilityDetail: venue?.accessibilityDetail,
+      boxOffice: venue?.boxOffice
+    }
+  }
+}
+
+/** Detay kabuğu: yapısal alanlar hemen; prose yok (UI skeleton + pendingProse) */
 export function localizeEventShell<T extends EventLocalizeFields>(detail: T): T {
+  const { pendingProse, rawProse } = buildPendingAndRawProse(detail)
+
   return {
     ...detail,
-    info: detail.info ? safeFallback(detail.info) : undefined,
-    pleaseNote: detail.pleaseNote ? safeFallback(detail.pleaseNote) : undefined,
+    info: undefined,
+    pleaseNote: undefined,
     country: localizeCountryName(detail.country) || detail.country,
     venueDetail: detail.venueDetail
       ? localizeVenueShell(detail.venueDetail)
-      : detail.venueDetail
+      : detail.venueDetail,
+    pendingProse,
+    rawProse
   }
 }
 
 /** Prose makine çevirisi — ayrı istek / locale=1 */
 export async function localizeEventCopy<T extends EventLocalizeFields>(detail: T): Promise<T> {
-  const shell = localizeEventShell(detail)
-
   const [info, pleaseNote, venueDetail] = await Promise.all([
     translateToTurkish(detail.info),
     translateToTurkish(detail.pleaseNote),
@@ -312,9 +369,12 @@ export async function localizeEventCopy<T extends EventLocalizeFields>(detail: T
   ])
 
   return {
-    ...shell,
+    ...detail,
     info,
     pleaseNote,
-    venueDetail
+    country: localizeCountryName(detail.country) || detail.country,
+    venueDetail,
+    pendingProse: undefined,
+    rawProse: undefined
   }
 }

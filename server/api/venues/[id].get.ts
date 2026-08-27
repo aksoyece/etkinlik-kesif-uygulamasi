@@ -40,6 +40,6 @@ export default defineCachedEventHandler(async (event): Promise<VenueSummary> => 
     const id = getRouterParam(event, 'id') || ''
     const query = getQuery(event)
     const wantLocale = query.locale === '1' || query.locale === 'true'
-    return wantLocale ? `venue:v7:tr:${id}` : `venue:v7:shell:${id}`
+    return wantLocale ? `venue:v8:tr:${id}` : `venue:v8:shell:${id}`
   }
 })

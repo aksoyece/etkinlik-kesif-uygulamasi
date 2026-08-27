@@ -20,7 +20,9 @@ export function useVenue(
         return null
       }
 
-      return await $fetch<VenueSummary>(`/api/venues/${encodeURIComponent(venueId.value)}`)
+      return await $fetch<VenueSummary>(`/api/venues/${encodeURIComponent(venueId.value)}`, {
+        query: { locale: '1' }
+      })
     },
     {
       watch: [venueId, enabled],

@@ -10,7 +10,7 @@ const toast = useToast()
 const favorites = useFavoritesStore()
 
 const id = computed(() => String(route.params.id || ''))
-const { event, pending, error, refresh } = useEvent(id)
+const { event, pending, error, refresh, localePending } = useEvent(id)
 
 // Event payload’da venue yoksa (nadir) ekstra venue API; varsa gereksiz istek yok
 const needsVenueFetch = computed(() =>
@@ -48,7 +48,7 @@ const pageUrl = computed(() => `${requestUrl.origin}${route.fullPath}`)
 const categoryLabel = computed(() => translateCategory(event.value?.category))
 const genreLabel = computed(() => translateGenre(event.value?.genre))
 const statusText = computed(() => translateStatus(event.value?.status))
-/** Sunucu localizeEventCopy / localizeVenueCopy ile çevirir — template ham TM metni kullanmaz */
+/** Çevrilmiş prose — pending iken İngilizce gösterilmez */
 const infoText = computed(() => event.value?.info || undefined)
 const pleaseNoteText = computed(() => event.value?.pleaseNote || undefined)
 const venueBoxOffice = computed(() => venueInfo.value?.boxOffice || undefined)
@@ -59,6 +59,15 @@ const venueChildRule = computed(() => venueInfo.value?.childRule || undefined)
 const venueAccessibility = computed(() => venueInfo.value?.accessibilityDetail || undefined)
 const venueAddress = computed(() => venueInfo.value?.address)
 const canBuyTicket = computed(() => isValidTicketUrl(event.value?.ticketUrl))
+
+const pendingProse = computed(() => event.value?.pendingProse)
+const showInfoSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.info))
+const showPleaseNoteSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.pleaseNote))
+const showBoxOfficeSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.boxOffice))
+const showParkingSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.parkingDetail))
+const showRulesSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.generalRule))
+const showChildRuleSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.childRule))
+const showAccessibilitySkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.accessibilityDetail))
 
 const selectedImage = ref<string | null>(null)
 const galleryOpen = computed({
@@ -125,14 +134,14 @@ watch(error, (newError) => {
 
 useSeoMeta({
   title: 'Evently',
-  description: () => event.value?.info || `${event.value?.name || 'Etkinlik'} — ${event.value?.dateLabel || ''}`.trim(),
+  description: () => infoText.value || `${event.value?.name || 'Etkinlik'} — ${event.value?.dateLabel || ''}`.trim(),
   ogTitle: () => event.value?.name || 'Evently',
-  ogDescription: () => event.value?.info || event.value?.name || 'Etkinlik detayı',
+  ogDescription: () => infoText.value || event.value?.name || 'Etkinlik detayı',
   ogImage: () => event.value?.image,
   ogUrl: () => pageUrl.value,
   twitterCard: 'summary_large_image',
   twitterTitle: () => event.value?.name || 'Evently',
-  twitterDescription: () => event.value?.info || event.value?.name,
+  twitterDescription: () => infoText.value || event.value?.name,
   twitterImage: () => event.value?.image
 })
 
@@ -549,19 +558,43 @@ const barcodeStyle = computed(() => {
 
           <!-- Etkinlik Açıklaması -->
           <section
-            v-if="infoText"
+            v-if="showInfoSkeleton || infoText"
             class="ticket-stub flex-col p-6 sm:p-8 gap-4"
           >
             <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white border-b border-dashed border-neutral-200 dark:border-neutral-800 pb-2">
               Etkinlik bilgisi
             </h2>
-            <p class="whitespace-pre-line text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+            <div
+              v-if="showInfoSkeleton"
+              class="space-y-2"
+              aria-busy="true"
+              aria-label="Çeviri yükleniyor"
+            >
+              <USkeleton class="h-4 w-full" />
+              <USkeleton class="h-4 w-full" />
+              <USkeleton class="h-4 w-5/6" />
+              <USkeleton class="h-4 w-2/3" />
+            </div>
+            <p
+              v-else
+              class="whitespace-pre-line text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed"
+            >
               {{ infoText }}
             </p>
           </section>
 
+          <div
+            v-if="showPleaseNoteSkeleton"
+            class="ticket-stub flex-col p-4 gap-2 border-amber-500/20"
+            aria-busy="true"
+            aria-label="Uyarı çevirisi yükleniyor"
+          >
+            <USkeleton class="h-4 w-28" />
+            <USkeleton class="h-3 w-full" />
+            <USkeleton class="h-3 w-4/5" />
+          </div>
           <UAlert
-            v-if="pleaseNoteText"
+            v-else-if="pleaseNoteText"
             color="warning"
             icon="i-lucide-info"
             title="Lütfen dikkat"
@@ -667,16 +700,6 @@ const barcodeStyle = computed(() => {
                   <span>{{ venueAddress }}</span>
                 </p>
                 <p
-                  v-if="venueBoxOffice"
-                  class="flex items-start gap-2"
-                >
-                  <UIcon
-                    name="i-lucide-ticket"
-                    class="size-4 mt-0.5 text-primary flex-none"
-                  />
-                  <span class="whitespace-pre-line">Gişe: {{ venueBoxOffice }}</span>
-                </p>
-                <p
                   v-if="venueBoxOfficePhone"
                   class="flex items-start gap-2"
                 >
@@ -686,8 +709,46 @@ const barcodeStyle = computed(() => {
                   />
                   <span>{{ venueBoxOfficePhone }}</span>
                 </p>
+                <div
+                  v-if="showBoxOfficeSkeleton"
+                  class="flex items-start gap-2"
+                  aria-busy="true"
+                >
+                  <UIcon
+                    name="i-lucide-ticket"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
+                  <div class="flex-1 space-y-1.5">
+                    <USkeleton class="h-3 w-full" />
+                    <USkeleton class="h-3 w-4/5" />
+                  </div>
+                </div>
                 <p
-                  v-if="venueParking"
+                  v-else-if="venueBoxOffice"
+                  class="flex items-start gap-2"
+                >
+                  <UIcon
+                    name="i-lucide-ticket"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
+                  <span class="whitespace-pre-line">Gişe: {{ venueBoxOffice }}</span>
+                </p>
+                <div
+                  v-if="showParkingSkeleton"
+                  class="flex items-start gap-2"
+                  aria-busy="true"
+                >
+                  <UIcon
+                    name="i-lucide-car"
+                    class="size-4 mt-0.5 text-primary flex-none"
+                  />
+                  <div class="flex-1 space-y-1.5">
+                    <USkeleton class="h-3 w-full" />
+                    <USkeleton class="h-3 w-3/4" />
+                  </div>
+                </div>
+                <p
+                  v-else-if="venueParking"
                   class="flex items-start gap-2"
                 >
                   <UIcon
@@ -696,8 +757,22 @@ const barcodeStyle = computed(() => {
                   />
                   <span class="whitespace-pre-line">Otopark / ulaşım: {{ venueParking }}</span>
                 </p>
+                <div
+                  v-if="showRulesSkeleton"
+                  class="flex items-start gap-2"
+                  aria-busy="true"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="size-4 mt-0.5 text-neutral-400 flex-none"
+                  />
+                  <div class="flex-1 space-y-1.5">
+                    <USkeleton class="h-3 w-full" />
+                    <USkeleton class="h-3 w-5/6" />
+                  </div>
+                </div>
                 <p
-                  v-if="venueRules"
+                  v-else-if="venueRules"
                   class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
                 >
                   <UIcon
@@ -706,8 +781,22 @@ const barcodeStyle = computed(() => {
                   />
                   <span class="whitespace-pre-line">{{ venueRules }}</span>
                 </p>
+                <div
+                  v-if="showChildRuleSkeleton"
+                  class="flex items-start gap-2"
+                  aria-busy="true"
+                >
+                  <UIcon
+                    name="i-lucide-baby"
+                    class="size-4 mt-0.5 text-neutral-400 flex-none"
+                  />
+                  <div class="flex-1 space-y-1.5">
+                    <USkeleton class="h-3 w-full" />
+                    <USkeleton class="h-3 w-2/3" />
+                  </div>
+                </div>
                 <p
-                  v-if="venueChildRule"
+                  v-else-if="venueChildRule"
                   class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
                 >
                   <UIcon
@@ -716,8 +805,22 @@ const barcodeStyle = computed(() => {
                   />
                   <span class="whitespace-pre-line">{{ venueChildRule }}</span>
                 </p>
+                <div
+                  v-if="showAccessibilitySkeleton"
+                  class="flex items-start gap-2"
+                  aria-busy="true"
+                >
+                  <UIcon
+                    name="i-lucide-accessibility"
+                    class="size-4 mt-0.5 text-neutral-400 flex-none"
+                  />
+                  <div class="flex-1 space-y-1.5">
+                    <USkeleton class="h-3 w-full" />
+                    <USkeleton class="h-3 w-4/5" />
+                  </div>
+                </div>
                 <p
-                  v-if="venueAccessibility"
+                  v-else-if="venueAccessibility"
                   class="flex items-start gap-2 text-xs text-neutral-400 dark:text-neutral-500"
                 >
                   <UIcon
