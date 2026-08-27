@@ -123,7 +123,7 @@ export function toHighResTicketmasterUrl(url?: string, meta?: { width?: number }
   return secure.replace(pattern, '$1TABLET_LANDSCAPE_LARGE_16_9$3')
 }
 
-/** Hâlâ düşük kırpma / SOURCE — kartta blur+contain gerekir */
+/** Hâlâ düşük kırpma / SOURCE / kare pp — kartta blur+contain gerekir */
 export function isSoftCoverImage(url?: string | null): boolean {
   if (!url || url === EVENT_IMAGE_PLACEHOLDER) {
     return true
@@ -131,9 +131,17 @@ export function isSoftCoverImage(url?: string | null): boolean {
   if (isSourceTicketmasterImage(url)) {
     return true
   }
-  const crop = url.match(/scale_crop\/(\d+)x(\d+)/i)
-  if (crop && Number(crop[1]) < 1600) {
+  // Kare / artist pp (1:1) — cover yerine soft frame
+  if (/_(?:1_1|CUSTOM|ARTIST|SQUARE|PORTABLE)(?:\.(?:jpe?g|png|webp))?$/i.test(url) || /\/1_1\//i.test(url)) {
     return true
+  }
+  const crop = url.match(/scale_crop\/(\d+)x(\d+)/i)
+  if (crop) {
+    const w = Number(crop[1])
+    const h = Number(crop[2])
+    if (w < 1600 || (h > 0 && Math.abs(w / h - 1) < 0.15)) {
+      return true
+    }
   }
   return false
 }

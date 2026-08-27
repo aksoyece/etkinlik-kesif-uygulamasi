@@ -55,23 +55,23 @@ watch(() => props.src, () => {
 </script>
 
 <template>
-  <div class="absolute inset-0 overflow-hidden bg-neutral-950">
-    <!-- Soft / Universe / SOURCE: tam alan blur arka plan + padding’li contain -->
+  <div class="absolute inset-0 overflow-hidden bg-neutral-900">
+    <!-- Soft / Universe / SOURCE / kare pp: görselin kendisinin blur’u + contain -->
     <template v-if="useBlurFrame">
       <img
         :src="optimizedSrc"
         alt=""
         aria-hidden="true"
-        class="pointer-events-none absolute inset-0 h-full w-full scale-150 object-cover blur-[48px] brightness-[0.28] contrast-125 saturate-50"
+        class="pointer-events-none absolute inset-0 h-full w-full scale-[1.35] object-cover blur-2xl brightness-75 saturate-125"
         loading="lazy"
         decoding="async"
       >
-      <div class="pointer-events-none absolute inset-0 bg-black/55" />
+      <div class="pointer-events-none absolute inset-0 bg-black/25" />
       <div class="absolute inset-0 z-[1] flex items-center justify-center p-3 sm:p-4">
         <img
           :src="optimizedSrc"
           :alt="alt"
-          class="max-h-full max-w-full object-contain object-center drop-shadow-md transition-transform duration-500 group-hover:scale-[1.02]"
+          class="max-h-full max-w-full object-contain object-center drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.02]"
           :loading="eager ? 'eager' : 'lazy'"
           decoding="async"
           @error="onError"
