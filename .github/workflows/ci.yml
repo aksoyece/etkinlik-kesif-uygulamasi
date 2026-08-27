@@ -13,6 +13,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Node 24 / npm 11 ile üretilen lock, GHA npm 10’da peer eksikleri yüzünden kırılabiliyor
+      - run: npm install -g npm@10.9.2
       - run: npm ci
       - run: npm test
       - run: npm run lint
