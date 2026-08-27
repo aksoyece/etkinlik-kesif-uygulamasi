@@ -637,6 +637,11 @@ const barcodeStyle = computed(() => {
       </div>
     </article>
 
+    <SimilarEvents
+      v-if="event"
+      :event="event"
+    />
+
     <UModal
       v-model:open="galleryOpen"
       :ui="{ content: 'max-w-4xl p-0 overflow-hidden' }"
