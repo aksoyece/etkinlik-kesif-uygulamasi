@@ -5,23 +5,10 @@ const props = defineProps<{
   event: EventDetail
 }>()
 
-const deferReady = ref(false)
-
-onMounted(() => {
-  const markReady = () => {
-    deferReady.value = true
-  }
-
-  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    window.requestIdleCallback(markReady, { timeout: 900 })
-  } else {
-    setTimeout(markReady, 120)
-  }
-})
-
+/** Bu bileşen yalnızca sayfa boyandıktan sonra mount edilir; burada hemen yükle */
 const { similar, pending, visible, refresh, error } = useSimilarEvents(
   () => props.event,
-  { deferred: () => deferReady.value }
+  { enabled: true }
 )
 </script>
 

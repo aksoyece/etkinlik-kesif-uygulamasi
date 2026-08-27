@@ -1,5 +1,5 @@
 import type { FormSubmitEvent } from '@nuxt/ui'
-import type { EventDetail, EventFilterState, EventListResult, EventSearchParams } from '~/types/event'
+import type { EventFilterState, EventListResult, EventSearchParams } from '~/types/event'
 import {
   defaultFilterState,
   eventFilterSchema,
@@ -63,23 +63,19 @@ export function useEvent(id: MaybeRefOrGetter<string>) {
 
   const { data, pending, error, refresh } = useAsyncData(
     () => `event-${eventId.value}`,
-    async () => {
-      const inflight = getEventDetailPrefetch(eventId.value)
-      if (inflight) {
-        const prefetched = await inflight
-        if (prefetched) {
-          return prefetched as EventDetail
-        }
-      }
-      return await $fetch<EventDetail>(`/api/events/${encodeURIComponent(eventId.value)}`)
-    },
+    () => fetchEventDetailCached(eventId.value),
     {
       watch: [eventId],
       lazy: true,
       server: true,
       dedupe: 'defer',
       getCachedData(key) {
-        return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
+        const fromPayload = nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
+        if (fromPayload) {
+          return fromPayload
+        }
+        const idValue = eventId.value
+        return idValue ? getCachedEventDetail(idValue) : undefined
       }
     }
   )

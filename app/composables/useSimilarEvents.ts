@@ -1,23 +1,27 @@
 import type { EventDetail, EventListResult, EventSummary } from '#shared/types/event'
 import { pickSimilarEvents, toSimilarEventsQuery } from '#shared/utils/similarEvents'
 
-const POOL_SIZE = 32
+/** Tek sayfa, sınırlı havuz — ek sayfa / recursive istek yok */
+const POOL_SIZE = 20
 const RESULT_LIMIT = 4
 
+const similarCache = new Map<string, EventSummary[]>()
+
 /**
- * Detay sayfası için benzer etkinlikler — aynı Discovery list API’si.
- * `deferred` true olana kadar istek atmaz (ilk boyamayı bloklamaz).
+ * Benzer etkinlikler — asla useAsyncData/useFetch ile page setup’ı bloklamaz.
+ * Yalnızca `enabled` true iken (sayfa boyandıktan sonra) tek $fetch atar.
  */
 export function useSimilarEvents(
   event: MaybeRefOrGetter<EventDetail | null | undefined>,
-  options?: { deferred?: MaybeRefOrGetter<boolean> }
+  options?: { enabled?: MaybeRefOrGetter<boolean> }
 ) {
   const similar = ref<EventSummary[]>([])
   const pending = ref(false)
   const error = ref<unknown>(null)
+  const started = ref(false)
 
-  const deferredReady = computed(() =>
-    options?.deferred === undefined ? true : Boolean(toValue(options.deferred))
+  const enabled = computed(() =>
+    options?.enabled === undefined ? true : Boolean(toValue(options.enabled))
   )
 
   const canQuery = computed(() => {
@@ -27,13 +31,7 @@ export function useSimilarEvents(
 
   async function refresh() {
     const current = toValue(event)
-    if (!deferredReady.value || !current?.id) {
-      if (!deferredReady.value) {
-        return
-      }
-      similar.value = []
-      error.value = null
-      pending.value = false
+    if (!enabled.value || !current?.id) {
       return
     }
 
@@ -45,10 +43,22 @@ export function useSimilarEvents(
       return
     }
 
+    const cacheKey = `${current.id}|${current.category || ''}|${current.genre || ''}|${current.city || ''}`
+    const cached = similarCache.get(cacheKey)
+    if (cached) {
+      similar.value = cached
+      error.value = null
+      pending.value = false
+      started.value = true
+      return
+    }
+
     pending.value = true
     error.value = null
+    started.value = true
 
     try {
+      // Tek istek — page>1 yok, recursive yok
       const data = await $fetch<EventListResult>('/api/events', {
         query: {
           ...base,
@@ -63,12 +73,15 @@ export function useSimilarEvents(
         return
       }
 
-      similar.value = pickSimilarEvents(data.events ?? [], {
+      const picked = pickSimilarEvents(data.events ?? [], {
         excludeId: latest.id,
         excludeName: latest.name,
         preferCity: latest.city,
         limit: RESULT_LIMIT
       })
+
+      similarCache.set(cacheKey, picked)
+      similar.value = picked
     } catch (err) {
       error.value = err
       similar.value = []
@@ -80,21 +93,28 @@ export function useSimilarEvents(
   watch(
     () => {
       const current = toValue(event)
-      if (!current?.id) return ''
-      return `${deferredReady.value}|${current.id}|${current.category || ''}|${current.genre || ''}|${current.city || ''}`
+      if (!enabled.value || !current?.id) {
+        return ''
+      }
+      return `${enabled.value}|${current.id}|${current.category || ''}|${current.genre || ''}`
     },
-    () => {
+    (key) => {
+      if (!key) {
+        return
+      }
       void refresh()
     },
-    { immediate: true }
+    { flush: 'post', immediate: true }
   )
 
   const waiting = computed(() =>
-    canQuery.value && (!deferredReady.value || pending.value)
+    canQuery.value && enabled.value && (pending.value || (!started.value && similar.value.length === 0 && !error.value))
   )
 
+  // enabled olana kadar bölüm hiç görünmesin (ana içeriği bekletmez)
   const visible = computed(() =>
-    canQuery.value
+    enabled.value
+    && canQuery.value
     && (waiting.value || Boolean(error.value) || similar.value.length > 0)
   )
 
@@ -104,7 +124,8 @@ export function useSimilarEvents(
     error,
     empty: computed(() =>
       canQuery.value
-      && deferredReady.value
+      && enabled.value
+      && started.value
       && !pending.value
       && !error.value
       && similar.value.length === 0

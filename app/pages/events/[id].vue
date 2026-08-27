@@ -53,16 +53,38 @@ const galleryOpen = computed({
 
 /** Galeri / sanatçılar / mekan ekleri — ana bilet boyandıktan sonra */
 const belowFoldReady = ref(false)
+/** Öneri bölümü — ana etkinlik göründükten sonra, asla setup’ı bloklamaz */
+const similarReady = ref(false)
+
 onMounted(() => {
-  const reveal = () => {
+  const revealBelow = () => {
     belowFoldReady.value = true
   }
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    window.requestIdleCallback(reveal, { timeout: 500 })
+    window.requestIdleCallback(revealBelow, { timeout: 500 })
   } else {
-    requestAnimationFrame(() => setTimeout(reveal, 50))
+    requestAnimationFrame(() => setTimeout(revealBelow, 50))
   }
 })
+
+watch(event, (value) => {
+  if (!value?.id || similarReady.value) {
+    return
+  }
+  // Ana içerik commit edilsin; sonra lazy öneri mount
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      const start = () => {
+        similarReady.value = true
+      }
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        window.requestIdleCallback(start, { timeout: 1800 })
+      } else {
+        setTimeout(start, 200)
+      }
+    })
+  })
+}, { flush: 'post' })
 
 // 9. 404 Sayfası: Olmayan bir etkinlik ID'sine gidildiğinde fatal 404 hatası fırlatır, böylece custom error.vue tetiklenir
 watch(error, (newError) => {
@@ -725,8 +747,8 @@ const barcodeStyle = computed(() => {
     </article>
 
     <ClientOnly>
-      <SimilarEvents
-        v-if="event"
+      <LazySimilarEvents
+        v-if="event && similarReady"
         :event="event"
       />
     </ClientOnly>
