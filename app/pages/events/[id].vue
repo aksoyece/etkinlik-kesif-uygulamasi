@@ -661,7 +661,7 @@ const barcodeStyle = computed(() => {
             class="ticket-stub flex-col p-6 gap-4"
           >
             <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white border-b border-dashed border-neutral-200 dark:border-neutral-800 pb-2">
-              Mekan
+              Venue
             </h2>
 
             <div class="space-y-3">
@@ -698,7 +698,7 @@ const barcodeStyle = computed(() => {
                     name="i-lucide-ticket"
                     class="size-4 mt-0.5 text-primary flex-none"
                   />
-                  <span class="whitespace-pre-line">Gişe: {{ venueBoxOffice }}</span>
+                  <span class="whitespace-pre-line">Box Office: {{ venueBoxOffice }}</span>
                 </p>
                 <p
                   v-if="venueParking"
@@ -708,7 +708,7 @@ const barcodeStyle = computed(() => {
                     name="i-lucide-car"
                     class="size-4 mt-0.5 text-primary flex-none"
                   />
-                  <span class="whitespace-pre-line">Otopark / ulaşım: {{ venueParking }}</span>
+                  <span class="whitespace-pre-line">Parking / transport: {{ venueParking }}</span>
                 </p>
                 <p
                   v-if="venueRules"
@@ -753,7 +753,7 @@ const barcodeStyle = computed(() => {
                   size="sm"
                   class="w-full justify-center"
                 >
-                  Haritada aç
+                  Open in map
                 </UButton>
                 <UButton
                   v-if="venueInfo.url"
@@ -764,7 +764,7 @@ const barcodeStyle = computed(() => {
                   trailing-icon="i-lucide-arrow-up-right"
                   class="mx-auto"
                 >
-                  Mekan sayfası
+                  Venue page
                 </UButton>
               </div>
             </div>

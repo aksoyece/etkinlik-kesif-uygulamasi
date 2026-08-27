@@ -12,7 +12,6 @@ import type {
   TicketmasterVenue,
   VenueSummary
 } from '../types/event'
-import { localizeAddressLine, localizeCountryName } from './localize'
 import { resolveTicketUrl } from './ticketUrl'
 
 export const FAVORITES_STORAGE_KEY = 'etkinlik-favoriler'
@@ -368,7 +367,8 @@ export function mapVenue(
   }
 
   const includeProse = options.includeProse !== false
-  const country = localizeCountryName(venue.country?.name) || venue.country?.name
+  // Mekan paneli Ticketmaster orijinali (EN) — ülke/adres TR’ye çevrilmez
+  const country = venue.country?.name
 
   const addressParts = [
     venue.address?.line1,
@@ -383,7 +383,7 @@ export function mapVenue(
     id: venue.id,
     name: venue.name,
     url: venue.url,
-    address: localizeAddressLine(addressParts.join(', ')),
+    address: addressParts.join(', ') || undefined,
     city: venue.city?.name,
     state: venue.state?.name,
     country,
@@ -452,7 +452,7 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
     localDate: event.dates?.start?.localDate,
     localTime: event.dates?.start?.localTime,
     city: venue?.city?.name,
-    country: localizeCountryName(venue?.country?.name) || venue?.country?.name,
+    country: venue?.country?.name,
     venue: venue?.name,
     venueId: venue?.id,
     // Liste → detay önizlemesi: adres / harita / mekan linki hemen
