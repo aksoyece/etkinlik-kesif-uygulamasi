@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { EventSummary } from '../app/types/event'
-import { EVENT_IMAGE_PLACEHOLDER } from '../shared/utils/event'
 import { pickPopularArtists } from '../shared/utils/popularArtists'
 
 function event(partial: Partial<EventSummary> & Pick<EventSummary, 'id' | 'name'>): EventSummary {
