@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { EVENT_IMAGE_PLACEHOLDER, isSourceTicketmasterImage } from '#shared/utils/event'
+import {
+  EVENT_IMAGE_PLACEHOLDER,
+  isSoftCoverImage,
+  isSourceTicketmasterImage,
+  toOptimizedImageUrl
+} from '#shared/utils/event'
 
 const props = withDefaults(defineProps<{
   src?: string | null
   alt: string
-  /** card: SOURCE → blur + contain; hero: SOURCE → placeholder */
+  /** card: soft → blur + contain; hero: SOURCE → placeholder, diğerleri yüksek çözünürlük */
   mode?: 'card' | 'hero'
   eager?: boolean
 }>(), {
@@ -24,12 +29,20 @@ const showPlaceholder = computed(() =>
   || (props.mode === 'hero' && isSource.value)
 )
 
-const displaySrc = computed(() =>
-  showPlaceholder.value ? EVENT_IMAGE_PLACEHOLDER : (props.src as string)
-)
+const optimizedSrc = computed(() => {
+  if (showPlaceholder.value) {
+    return EVENT_IMAGE_PLACEHOLDER
+  }
+  return toOptimizedImageUrl(props.src || undefined, { forHero: props.mode === 'hero' })
+    || props.src
+    || EVENT_IMAGE_PLACEHOLDER
+})
 
+/** Kartta optimize sonrası hâlâ yumuşaksa blur çerçeve */
 const useBlurFrame = computed(() =>
-  props.mode === 'card' && isSource.value && !showPlaceholder.value
+  props.mode === 'card'
+  && !showPlaceholder.value
+  && (isSource.value || isSoftCoverImage(optimizedSrc.value))
 )
 
 function onError() {
@@ -43,31 +56,31 @@ watch(() => props.src, () => {
 
 <template>
   <div class="absolute inset-0 overflow-hidden bg-neutral-900">
-    <!-- SOURCE kart: koyu bulanık dolgu -->
+    <!-- Soft / SOURCE kart: koyu bulanık dolgu + net contain -->
     <template v-if="useBlurFrame">
       <img
-        :src="displaySrc"
+        :src="optimizedSrc"
         alt=""
         aria-hidden="true"
-        class="absolute inset-0 h-full w-full scale-110 object-cover blur-xl brightness-[0.35] saturate-75"
+        class="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl brightness-[0.4] saturate-75"
         loading="lazy"
         decoding="async"
       >
-      <div class="absolute inset-0 bg-black/35" />
+      <div class="absolute inset-0 bg-black/40" />
       <img
-        :src="displaySrc"
+        :src="optimizedSrc"
         :alt="alt"
-        class="relative z-[1] h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-105"
+        class="relative z-[1] h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-[1.02]"
         :loading="eager ? 'eager' : 'lazy'"
         decoding="async"
         @error="onError"
       >
     </template>
 
-    <!-- 16:9 / normal: cover -->
+    <!-- Yüksek çözünürlüklü 16:9 / Universe 2K+: cover -->
     <img
       v-else
-      :src="displaySrc"
+      :src="optimizedSrc"
       :alt="alt"
       class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
       :loading="eager ? 'eager' : 'lazy'"

@@ -9,6 +9,7 @@ import {
   toggleFavoriteEvent,
   toHttps,
   toHighResTicketmasterUrl,
+  toOptimizedImageUrl,
   toTicketmasterDateTime
 } from '../shared/utils/event'
 import type { TicketmasterEvent } from '../app/types/event'
@@ -50,6 +51,12 @@ describe('etkinlik yardımcıları', () => {
 
   it('en uygun görseli seçer (16:9, min 640, fallback değil)', () => {
     expect(getBestEventImage(sampleEvent.images)).toBe('https://cdn.example/cover.jpg')
+  })
+
+  it('Universe scale_crop URL’sini yüksek çözünürlüğe çıkarır', () => {
+    const low = 'https://images.universe.com/abc/-/format/jpeg/-/scale_crop/1024x683/center/-/progressive/yes/'
+    expect(toOptimizedImageUrl(low)).toContain('scale_crop/2048x1365')
+    expect(toOptimizedImageUrl(low, { forHero: true })).toContain('scale_crop/2400x1600')
   })
 
   it('Ticketmaster kapak görselini (16:9, fallback olmayan) tercih eder', () => {

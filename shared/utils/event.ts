@@ -71,6 +71,32 @@ export function toHttps(url?: string): string | undefined {
   return url.replace(/^http:/, 'https:')
 }
 
+/** Kart / hero için Universe (Uploadcare) kırpma boyutu */
+const UNIVERSE_CARD_SIZE = '2048x1365'
+const UNIVERSE_HERO_SIZE = '2400x1600'
+
+/**
+ * Universe / Uploadcare scale_crop URL’lerini daha yüksek çözünürlüğe çeker.
+ * Ticketmaster için mevcut LARGE yükseltmesini uygular.
+ */
+export function toOptimizedImageUrl(
+  url?: string,
+  options?: { forHero?: boolean, width?: number }
+): string | undefined {
+  const secure = toHttps(url)
+  if (!secure) {
+    return undefined
+  }
+
+  // images.universe.com / ucarecdn: -/scale_crop/WxH/
+  if (/scale_crop\/\d+x\d+/i.test(secure)) {
+    const size = options?.forHero ? UNIVERSE_HERO_SIZE : UNIVERSE_CARD_SIZE
+    return secure.replace(/scale_crop\/\d+x\d+/i, `scale_crop/${size}`)
+  }
+
+  return toHighResTicketmasterUrl(secure, { width: options?.width })
+}
+
 /**
  * Yalnızca zaten yüksek çözünürlüklü Ticketmaster URL’lerini aynı ailede büyütür.
  * Düşük çözünürlüklü / farklı oranlı görselleri LARGE_16_9’a zorlamaz (bulanık kırpma üretir).
@@ -101,6 +127,21 @@ export function toHighResTicketmasterUrl(url?: string, meta?: { width?: number }
 
   const pattern = new RegExp(`(_|/)(${TICKETMASTER_IMAGE_SIZES.join('|')})(\\.(?:jpe?g|png|webp))$`, 'i')
   return secure.replace(pattern, '$1TABLET_LANDSCAPE_LARGE_16_9$3')
+}
+
+/** Hâlâ düşük kırpma / SOURCE — kartta blur+contain gerekir */
+export function isSoftCoverImage(url?: string | null): boolean {
+  if (!url || url === EVENT_IMAGE_PLACEHOLDER) {
+    return true
+  }
+  if (isSourceTicketmasterImage(url)) {
+    return true
+  }
+  const crop = url.match(/scale_crop\/(\d+)x(\d+)/i)
+  if (crop && Number(crop[1]) < 1600) {
+    return true
+  }
+  return false
 }
 
 function isLandscapeCover(image: TicketmasterImage): boolean {
@@ -183,7 +224,7 @@ export function pickBestCoverFromImages(
     return undefined
   }
 
-  return toHighResTicketmasterUrl(best.url, { width: best.width || PREFERRED_EVENT_IMAGE_WIDTH }) || toHttps(best.url)
+  return toOptimizedImageUrl(best.url, { width: best.width || PREFERRED_EVENT_IMAGE_WIDTH }) || toHttps(best.url)
 }
 
 /**
@@ -414,11 +455,16 @@ export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetai
       }
       return imageArea(b) - imageArea(a)
     })
-    .map(image => toHighResTicketmasterUrl(image.url, { width: image.width }) || toHttps(image.url))
+    .map(image => toOptimizedImageUrl(image.url, {
+      forHero: true,
+      width: image.width
+    }) || toHttps(image.url))
     .filter((url): url is string => Boolean(url))
 
   const images = uniqueGalleryImages([
-    ...(cover ? [cover] : []),
+    ...(cover
+      ? [toOptimizedImageUrl(cover, { forHero: true }) || cover]
+      : []),
     ...galleryFromApi
   ])
 
