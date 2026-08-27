@@ -36,10 +36,13 @@ onMounted(() => {
 
     <template #right>
       <UChip
-        :text="favorites.count"
+        :text="favorites.count > 99 ? '99+' : favorites.count"
         :show="favorites.count > 0"
         color="primary"
-        size="sm"
+        size="3xl"
+        :ui="{
+          base: 'h-[1.125rem] min-w-[1.125rem] px-1 text-[10px] leading-none font-semibold tabular-nums text-white ring-2 ring-(--ui-bg)'
+        }"
       >
         <UButton
           to="/favorites"
