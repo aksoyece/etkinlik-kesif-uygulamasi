@@ -1,11 +1,22 @@
 <script setup lang="ts">
+import type { EventListResult } from '#shared/types/event'
 import type { QuickSearchResult } from '#shared/utils/quickSearch'
-import { buildQuickSearchResults } from '#shared/utils/quickSearch'
+import {
+  QUICK_SEARCH_DEBOUNCE_MS,
+  QUICK_SEARCH_LIMIT,
+  QUICK_SEARCH_MIN_CHARS,
+  mapEventsToQuickSearchResults,
+  toQuickSearchApiQuery,
+  toQuickSearchEventsPath
+} from '#shared/utils/quickSearch'
 
 const keyword = ref('')
 const open = ref(false)
 const activeIndex = ref(-1)
 const debouncedQuery = ref('')
+const results = ref<QuickSearchResult[]>([])
+const searching = ref(false)
+const searchError = ref(false)
 
 const router = useRouter()
 const rootEl = ref<HTMLElement | null>(null)
@@ -17,40 +28,16 @@ const listboxId = `${inputId}-listbox`
 const panelStyle = ref<Record<string, string>>({})
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
+let requestSeq = 0
 
-const musicPool = useEvents({ classificationName: 'Music', sort: 'relevance,desc', size: 20, page: 1 })
-const sportsPool = useEvents({ classificationName: 'Sports', sort: 'relevance,desc', size: 20, page: 1 })
-const artsPool = useEvents({ classificationName: 'Arts & Theatre', sort: 'relevance,desc', size: 20, page: 1 })
-const generalPool = useEvents({ sort: 'relevance,desc', size: 20, page: 1 })
-
-const searchPool = computed(() => {
-  const merged = [
-    ...generalPool.events.value,
-    ...musicPool.events.value,
-    ...sportsPool.events.value,
-    ...artsPool.events.value
-  ]
-  const seen = new Set<string>()
-  return merged.filter((event) => {
-    if (seen.has(event.id)) return false
-    seen.add(event.id)
-    return true
-  })
-})
-
-const results = computed(() =>
-  buildQuickSearchResults(searchPool.value, debouncedQuery.value, {
-    maxTotal: 6,
-    maxPerType: 2,
-    minQueryLength: 2
-  })
-)
-
-const showPanel = computed(() => open.value && debouncedQuery.value.trim().length >= 2)
+const showPanel = computed(() => open.value && debouncedQuery.value.trim().length >= QUICK_SEARCH_MIN_CHARS)
 const activeOptionId = computed(() =>
   activeIndex.value >= 0 && results.value[activeIndex.value]
     ? results.value[activeIndex.value]!.id
     : undefined
+)
+const showEmpty = computed(() =>
+  showPanel.value && !searching.value && !searchError.value && results.value.length === 0
 )
 
 function updatePanelPosition() {
@@ -65,27 +52,65 @@ function updatePanelPosition() {
   }
 }
 
+async function runSearch(query: string) {
+  const q = query.trim()
+  if (q.length < QUICK_SEARCH_MIN_CHARS) {
+    results.value = []
+    searching.value = false
+    searchError.value = false
+    return
+  }
+
+  const seq = ++requestSeq
+  searching.value = true
+  searchError.value = false
+  open.value = true
+  await nextTick()
+  updatePanelPosition()
+
+  try {
+    const data = await $fetch<EventListResult>('/api/events', {
+      query: toQuickSearchApiQuery(q, QUICK_SEARCH_LIMIT)
+    })
+    if (seq !== requestSeq) return
+    results.value = mapEventsToQuickSearchResults(data.events ?? [], QUICK_SEARCH_LIMIT)
+    activeIndex.value = results.value.length ? 0 : -1
+  } catch {
+    if (seq !== requestSeq) return
+    results.value = []
+    searchError.value = true
+    activeIndex.value = -1
+  } finally {
+    if (seq === requestSeq) {
+      searching.value = false
+    }
+  }
+}
+
 watch(keyword, (value) => {
   if (debounceTimer) clearTimeout(debounceTimer)
 
   if (!value.trim()) {
     debouncedQuery.value = ''
+    results.value = []
+    searching.value = false
+    searchError.value = false
+    closePanel()
+    return
+  }
+
+  if (value.trim().length < QUICK_SEARCH_MIN_CHARS) {
+    debouncedQuery.value = value
+    results.value = []
+    searching.value = false
     closePanel()
     return
   }
 
   debounceTimer = setTimeout(() => {
     debouncedQuery.value = value
-    open.value = value.trim().length >= 2
-  }, 300)
-})
-
-watch(results, (list) => {
-  if (!showPanel.value) {
-    activeIndex.value = -1
-    return
-  }
-  activeIndex.value = list.length ? Math.min(Math.max(activeIndex.value, 0), list.length - 1) : -1
+    void runSearch(value)
+  }, QUICK_SEARCH_DEBOUNCE_MS)
 })
 
 watch(showPanel, async (visible) => {
@@ -101,11 +126,7 @@ function closePanel() {
 
 function submitSearch() {
   closePanel()
-  const q = keyword.value.trim()
-  router.push({
-    path: '/events',
-    query: q ? { keyword: q } : {}
-  })
+  router.push(toQuickSearchEventsPath(keyword.value))
 }
 
 function goToResult(item: QuickSearchResult) {
@@ -129,20 +150,18 @@ function onInputKeydown(event: KeyboardEvent) {
     return
   }
 
-  if (!showPanel.value) {
+  if (!showPanel.value || !results.value.length) {
     return
   }
 
   if (event.key === 'ArrowDown') {
     event.preventDefault()
-    if (!results.value.length) return
     activeIndex.value = (activeIndex.value + 1) % results.value.length
     return
   }
 
   if (event.key === 'ArrowUp') {
     event.preventDefault()
-    if (!results.value.length) return
     activeIndex.value = activeIndex.value <= 0
       ? results.value.length - 1
       : activeIndex.value - 1
@@ -204,7 +223,7 @@ onBeforeUnmount(() => {
           aria-autocomplete="list"
           :aria-controls="listboxId"
           :aria-activedescendant="activeOptionId"
-          @focus="open = keyword.trim().length >= 2"
+          @focus="open = keyword.trim().length >= QUICK_SEARCH_MIN_CHARS"
           @keydown="onInputKeydown"
         />
       </div>
@@ -230,8 +249,19 @@ onBeforeUnmount(() => {
       class="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
       :style="panelStyle"
     >
+      <div
+        v-if="searching"
+        class="flex items-center gap-2 px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400"
+      >
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-4 animate-spin"
+        />
+        Aranıyor...
+      </div>
+
       <ul
-        v-if="results.length"
+        v-else-if="results.length"
         class="max-h-72 overflow-y-auto py-1"
       >
         <li
@@ -287,7 +317,7 @@ onBeforeUnmount(() => {
       </ul>
 
       <div
-        v-else
+        v-else-if="showEmpty || searchError"
         class="px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400"
       >
         Sonuç bulunamadı
