@@ -82,6 +82,12 @@ describe('etkinlik yardımcıları', () => {
     )).toBe('https://s1.ticketm.net/dam/a/abc/event_TABLET_LANDSCAPE_LARGE_16_9.jpg')
   })
 
+  it('SOURCE attraction görselini TABLET’e zorlamaz', () => {
+    expect(toHighResTicketmasterUrl(
+      'https://s1.ticketm.net/dam/a/8f1/c3ba26f9-47ce-4ec0-bd0e-645a71e278f1_SOURCE'
+    )).toBe('https://s1.ticketm.net/dam/a/8f1/c3ba26f9-47ce-4ec0-bd0e-645a71e278f1_SOURCE')
+  })
+
   it('tarihi biçimler', () => {
     const label = formatEventDate(sampleEvent.dates)
     expect(label).toContain('2026')

@@ -79,6 +79,11 @@ export function toHighResTicketmasterUrl(url?: string): string | undefined {
     return secure
   }
 
+  // SOURCE’u TABLET_LANDSCAPE’e çevirme — CDN çoğu attraction için 403 döner
+  if (/_(SOURCE)(?:\.(?:jpe?g|png|webp))?$/i.test(secure)) {
+    return secure
+  }
+
   const pattern = new RegExp(`(_|/)(${TICKETMASTER_IMAGE_SIZES.join('|')})(\\.(?:jpe?g|png|webp))$`, 'i')
   return secure.replace(pattern, '$1TABLET_LANDSCAPE_LARGE_16_9$3')
 }
@@ -123,6 +128,37 @@ export function getBestEventImage(images?: TicketmasterImage[]): string {
 /** @deprecated getBestEventImage kullanın */
 export function pickEventImage(images?: TicketmasterImage[]): string {
   return getBestEventImage(images)
+}
+
+/**
+ * Attraction görselleri: SOURCE/ARTIST_PAGE tercih et.
+ * Event afişindeki gibi SOURCE→TABLET zorlaması attraction CDN’de sık 403 veriyor.
+ */
+export function getBestAttractionImage(images?: TicketmasterImage[]): string | undefined {
+  if (!images?.length) {
+    return undefined
+  }
+
+  const usable = images.filter(image => Boolean(image.url))
+  if (!usable.length) {
+    return undefined
+  }
+
+  const nonFallback = usable.filter(image => !image.fallback)
+  const pool = nonFallback.length ? nonFallback : usable
+
+  const source = pool.find(image => /_SOURCE(?:\.(?:jpe?g|png|webp))?$/i.test(image.url || ''))
+  if (source?.url) {
+    return toHttps(source.url)
+  }
+
+  const artistPage = pool.find(image => /ARTIST_PAGE/i.test(image.url || ''))
+  if (artistPage?.url) {
+    return toHttps(artistPage.url)
+  }
+
+  const best = getBestEventImage(images)
+  return best === EVENT_IMAGE_PLACEHOLDER ? undefined : best
 }
 
 export function formatEventDate(dates?: TicketmasterDates): string {
@@ -223,7 +259,7 @@ export function mapAttraction(attraction: TicketmasterAttraction): AttractionSum
     id: attraction.id,
     name: attraction.name || 'Sanatçı',
     url: attraction.url,
-    image: getBestEventImage(attraction.images),
+    image: getBestAttractionImage(attraction.images),
     genre: classification?.genre?.name || classification?.segment?.name
   }
 }

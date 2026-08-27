@@ -142,6 +142,7 @@ watch(artists, async () => {
             class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             decoding="async"
+            @error="($event.target as HTMLImageElement).src = '/placeholder-event.svg'"
           >
           <div class="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
         </div>
