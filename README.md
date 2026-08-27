@@ -28,7 +28,7 @@ Aktif market `shared/utils/market.ts` üzerinden yönetilir; TR tanımı ileride
 - Nuxt UI componentleri
 - Responsive tasarım
 - Koyu / açık tema
-- TypeScript
+- TypeScript ile tip güvenliği
 - Zod ile gerekli doğrulama işlemleri
 - Takvime ekleme (.ics ve Google Takvim)
 - Etkinlik bağlantısı paylaşma
@@ -131,3 +131,7 @@ test/                      # Vitest birim testleri
 ```
 
 Nuxt 4 kaynak dizinini `app/` altında tutar.
+
+---
+
+© 2026 Evently · Designed & developed by Ece Aksoy
