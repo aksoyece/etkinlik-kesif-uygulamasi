@@ -30,6 +30,20 @@ body {
     radial-gradient(circle at 1px 1px, rgb(26 26 26 / 0.05) 1px, transparent 0) 0 0 / 18px 18px,
     var(--ticket-paper);
   color: var(--ticket-ink);
+  /* Etiket/buton tıklayınca metin imleci çıkmasın */
+  caret-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"],
+[contenteditable=""] {
+  caret-color: auto;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* 1. RENK PALETİ: Koyu mod arka planı + açık metin (yoksa takvim günleri siyah kalır) */
