@@ -11,15 +11,30 @@ export default defineCachedEventHandler(async (event): Promise<EventDetail> => {
     })
   }
 
+  const query = getQuery(event)
+  const wantLocale = query.locale === '1' || query.locale === 'true'
+
   const data = await ticketmasterFetch<TicketmasterEvent>(
     event,
     `/events/${encodeURIComponent(id)}.json`
   )
 
   const detail = mapTicketmasterEventDetail(data)
-  return await localizeEventCopy(detail)
+
+  // Varsayılan: mekan/adres/seatmap hemen (çeviri beklemez)
+  // ?locale=1: info / pleaseNote / mekan prose makine çevirisi
+  if (wantLocale) {
+    return await localizeEventCopy(detail)
+  }
+
+  return localizeEventShell(detail)
 }, {
   maxAge: 60 * 60,
   swr: true,
-  getKey: event => `event:v16:tr:${getRouterParam(event, 'id') || ''}`
+  getKey: (event) => {
+    const id = getRouterParam(event, 'id') || ''
+    const query = getQuery(event)
+    const wantLocale = query.locale === '1' || query.locale === 'true'
+    return wantLocale ? `event:v17:tr:${id}` : `event:v17:shell:${id}`
+  }
 })

@@ -11,6 +11,9 @@ export default defineCachedEventHandler(async (event): Promise<VenueSummary> => 
     })
   }
 
+  const query = getQuery(event)
+  const wantLocale = query.locale === '1' || query.locale === 'true'
+
   const data = await ticketmasterFetch<TicketmasterVenue>(
     event,
     `/venues/${encodeURIComponent(id)}.json`
@@ -25,10 +28,18 @@ export default defineCachedEventHandler(async (event): Promise<VenueSummary> => 
     })
   }
 
-  // Mekan endpoint’i de async çeviriyle güçlendirilir (sözlük mapVenue’da zaten uygulandı)
-  return await localizeVenueCopy(venue)
+  if (wantLocale) {
+    return await localizeVenueCopy(venue)
+  }
+
+  return localizeVenueShell(venue)
 }, {
   maxAge: 60 * 60,
   swr: true,
-  getKey: event => `venue:v6:tr:${getRouterParam(event, 'id') || ''}`
+  getKey: (event) => {
+    const id = getRouterParam(event, 'id') || ''
+    const query = getQuery(event)
+    const wantLocale = query.locale === '1' || query.locale === 'true'
+    return wantLocale ? `venue:v7:tr:${id}` : `venue:v7:shell:${id}`
+  }
 })

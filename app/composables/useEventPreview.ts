@@ -5,6 +5,8 @@ import type { EventDetail, EventSummary } from '#shared/types/event'
  * Tam API cevabı gelince useEvent bunu ezer.
  */
 export function summaryToEventPreview(summary: EventSummary): EventDetail {
+  const address = [summary.city, summary.country].filter(Boolean).join(', ') || undefined
+
   return {
     ...summary,
     ticketUrl: summary.url,
@@ -16,7 +18,8 @@ export function summaryToEventPreview(summary: EventSummary): EventDetail {
           name: summary.venue,
           city: summary.city,
           country: summary.country,
-          address: [summary.city, summary.country].filter(Boolean).join(', ') || undefined
+          // Adres + harita linki karttan hemen; sokak satırı kabuk API ile gelir
+          address
         }
       : undefined
   }

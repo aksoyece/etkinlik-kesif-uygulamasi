@@ -209,7 +209,7 @@ export async function translateToTurkish(
   return safeFallback(trimmed)
 }
 
-export async function localizeVenueCopy<T extends {
+type VenueLocalizeFields = {
   address?: string
   country?: string
   parkingDetail?: string
@@ -219,14 +219,26 @@ export async function localizeVenueCopy<T extends {
   boxOffice?: string
   boxOfficePhone?: string
   name?: string
-}>(venue: T): Promise<T> {
-  // İsim / adres / ülke hemen — makine çevirisi yok
-  const base = {
+}
+
+/** Adres / ülke / URL — makine çevirisi yok, anında */
+export function localizeVenueShell<T extends VenueLocalizeFields>(venue: T): T {
+  return {
     ...venue,
     address: localizeAddressLine(venue.address) || venue.address,
     country: localizeCountryName(venue.country) || venue.country,
-    boxOfficePhone: venue.boxOfficePhone
+    boxOfficePhone: venue.boxOfficePhone,
+    // Prose: sözlük/fallback; makine çevirisi locale aşamasında
+    parkingDetail: venue.parkingDetail ? safeFallback(venue.parkingDetail) : undefined,
+    generalRule: venue.generalRule ? safeFallback(venue.generalRule) : undefined,
+    childRule: venue.childRule ? safeFallback(venue.childRule) : undefined,
+    accessibilityDetail: venue.accessibilityDetail ? safeFallback(venue.accessibilityDetail) : undefined,
+    boxOffice: venue.boxOffice ? safeFallback(venue.boxOffice) : undefined
   }
+}
+
+export async function localizeVenueCopy<T extends VenueLocalizeFields>(venue: T): Promise<T> {
+  const base = localizeVenueShell(venue)
 
   const hasProse = Boolean(
     venue.parkingDetail
@@ -264,26 +276,33 @@ export async function localizeVenueCopy<T extends {
   }
 }
 
-export async function localizeEventCopy<T extends {
+type EventLocalizeFields = {
   info?: string
   pleaseNote?: string
   country?: string
   name?: string
   venue?: string
-  venueDetail?: {
-    name?: string
-    address?: string
-    country?: string
-    parkingDetail?: string
-    generalRule?: string
-    childRule?: string
-    accessibilityDetail?: string
-    boxOffice?: string
-    boxOfficePhone?: string
-  }
+  venueDetail?: VenueLocalizeFields
   attractions?: Array<{ name: string, url?: string }>
-}>(detail: T): Promise<T> {
-  // Paralel: mekan adı/adres çeviriye bağlı değil; prose alanları birlikte biter
+}
+
+/** Detay kabuğu: mekan/adres/seatmap hemen; makine çevirisi yok */
+export function localizeEventShell<T extends EventLocalizeFields>(detail: T): T {
+  return {
+    ...detail,
+    info: detail.info ? safeFallback(detail.info) : undefined,
+    pleaseNote: detail.pleaseNote ? safeFallback(detail.pleaseNote) : undefined,
+    country: localizeCountryName(detail.country) || detail.country,
+    venueDetail: detail.venueDetail
+      ? localizeVenueShell(detail.venueDetail)
+      : detail.venueDetail
+  }
+}
+
+/** Prose makine çevirisi — ayrı istek / locale=1 */
+export async function localizeEventCopy<T extends EventLocalizeFields>(detail: T): Promise<T> {
+  const shell = localizeEventShell(detail)
+
   const [info, pleaseNote, venueDetail] = await Promise.all([
     translateToTurkish(detail.info),
     translateToTurkish(detail.pleaseNote),
@@ -293,10 +312,9 @@ export async function localizeEventCopy<T extends {
   ])
 
   return {
-    ...detail,
+    ...shell,
     info,
     pleaseNote,
-    country: localizeCountryName(detail.country) || detail.country,
     venueDetail
   }
 }

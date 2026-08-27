@@ -99,6 +99,20 @@ export function useEvent(id: MaybeRefOrGetter<string>) {
     }
   })
 
+  // Kabuk geldikten sonra prose çevirisini arka planda birleştir (mekanı bekletmez)
+  watch(
+    () => data.value?.id,
+    (id) => {
+      if (!import.meta.client || !id) {
+        return
+      }
+      void enrichEventLocale(id, (full) => {
+        data.value = full
+      })
+    },
+    { immediate: true }
+  )
+
   return {
     event,
     pending: showPending,

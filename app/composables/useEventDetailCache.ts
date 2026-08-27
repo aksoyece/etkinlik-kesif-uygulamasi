@@ -6,6 +6,8 @@ type CacheEntry = { data: EventDetail, at: number }
 
 const memoryCache = new Map<string, CacheEntry>()
 const inflight = new Map<string, Promise<EventDetail>>()
+const localeInflight = new Set<string>()
+const localeDone = new Set<string>()
 
 function cacheKey(id: string) {
   return `event-${id}`
@@ -61,6 +63,36 @@ export function getEventDetailInflight(id: string): Promise<EventDetail> | undef
   return inflight.get(id)
 }
 
+export function setCachedEventDetail(id: string, data: EventDetail) {
+  writeMemory(id, data)
+  syncPayload(id, data)
+}
+
+/** Kabuk geldikten sonra prose çevirisini arka planda çeker (bir kez) */
+export async function enrichEventLocale(
+  id: string,
+  onUpdate?: (data: EventDetail) => void
+): Promise<EventDetail | undefined> {
+  if (!id || localeDone.has(id) || localeInflight.has(id)) {
+    return undefined
+  }
+
+  localeInflight.add(id)
+  try {
+    const full = await $fetch<EventDetail>(`/api/events/${encodeURIComponent(id)}`, {
+      query: { locale: '1' }
+    })
+    localeDone.add(id)
+    setCachedEventDetail(id, full)
+    onUpdate?.(full)
+    return full
+  } catch {
+    return undefined
+  } finally {
+    localeInflight.delete(id)
+  }
+}
+
 export async function fetchEventDetailCached(id: string): Promise<EventDetail> {
   const hit = getCachedEventDetail(id)
   if (hit) {
@@ -72,6 +104,7 @@ export async function fetchEventDetailCached(id: string): Promise<EventDetail> {
     return existing
   }
 
+  // Kabuk: çevirisiz — mekan/adres/seatmap hızlı
   const request = $fetch<EventDetail>(`/api/events/${encodeURIComponent(id)}`)
     .then((data) => {
       writeMemory(id, data)

@@ -756,18 +756,9 @@ const barcodeStyle = computed(() => {
             </div>
           </div>
 
-          <!-- Oturma Planı (Bilet Temalı) -->
+          <!-- Oturma planı: kabuk API ile birlikte — below-fold gecikmesi yok -->
           <div
-            v-if="!belowFoldReady && event.seatmap"
-            class="ticket-stub flex-col p-6 gap-4"
-            aria-hidden="true"
-          >
-            <USkeleton class="h-6 w-32" />
-            <USkeleton class="h-48 w-full rounded-lg" />
-          </div>
-
-          <div
-            v-else-if="belowFoldReady && event.seatmap"
+            v-if="event.seatmap"
             class="ticket-stub flex-col p-6 gap-4"
           >
             <h2 class="font-ticket text-lg font-bold text-neutral-900 dark:text-white border-b border-dashed border-neutral-200 dark:border-neutral-800 pb-2">
