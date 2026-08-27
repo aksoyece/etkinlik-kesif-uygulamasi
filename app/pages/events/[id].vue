@@ -53,8 +53,9 @@ const galleryOpen = computed({
 
 /** Galeri / sanatçılar / mekan ekleri — ana bilet boyandıktan sonra */
 const belowFoldReady = ref(false)
-/** Öneri bölümü — ana etkinlik göründükten sonra, asla setup’ı bloklamaz */
-const similarReady = ref(false)
+/** Öneri yalnızca viewport’a girince — açılışta ağ/CPU yok */
+const similarVisible = ref(false)
+const similarSentinel = ref<HTMLElement | null>(null)
 
 onMounted(() => {
   const revealBelow = () => {
@@ -65,26 +66,28 @@ onMounted(() => {
   } else {
     requestAnimationFrame(() => setTimeout(revealBelow, 50))
   }
-})
 
-watch(event, (value) => {
-  if (!value?.id || similarReady.value) {
+  const el = similarSentinel.value
+  if (!el || typeof IntersectionObserver === 'undefined') {
+    // IO yoksa yine de hemen değil, uzun gecikmeyle
+    setTimeout(() => {
+      similarVisible.value = true
+    }, 2500)
     return
   }
-  // Ana içerik commit edilsin; sonra lazy öneri mount
-  nextTick(() => {
-    requestAnimationFrame(() => {
-      const start = () => {
-        similarReady.value = true
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        similarVisible.value = true
+        io.disconnect()
       }
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        window.requestIdleCallback(start, { timeout: 1800 })
-      } else {
-        setTimeout(start, 200)
-      }
-    })
-  })
-}, { flush: 'post' })
+    },
+    { rootMargin: '160px 0px', threshold: 0.01 }
+  )
+  io.observe(el)
+  onBeforeUnmount(() => io.disconnect())
+})
 
 // 9. 404 Sayfası: Olmayan bir etkinlik ID'sine gidildiğinde fatal 404 hatası fırlatır, böylece custom error.vue tetiklenir
 watch(error, (newError) => {
@@ -746,9 +749,14 @@ const barcodeStyle = computed(() => {
       </div>
     </article>
 
+    <div
+      ref="similarSentinel"
+      class="min-h-8"
+      aria-hidden="true"
+    />
     <ClientOnly>
       <LazySimilarEvents
-        v-if="event && similarReady"
+        v-if="event && similarVisible"
         :event="event"
       />
     </ClientOnly>

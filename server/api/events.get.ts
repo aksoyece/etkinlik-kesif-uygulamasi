@@ -43,7 +43,7 @@ export default defineCachedEventHandler(async (event): Promise<EventListResult> 
     const query = getQuery(event)
     return [
       'events',
-      'v8',
+      'v9',
       getActiveCountryCode(),
       query.keyword,
       query.city,

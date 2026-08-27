@@ -56,8 +56,10 @@ const TICKETMASTER_IMAGE_SIZES = [
   'BLOCK'
 ]
 
-/** Kart / detay görselleri için minimum genişlik (px) */
+/** Kart için kabul edilen minimum genişlik — altındakiler büyütülmez */
 export const MIN_EVENT_IMAGE_WIDTH = 640
+/** Tercih edilen kart genişliği */
+export const PREFERRED_EVENT_IMAGE_WIDTH = 1024
 
 export const EVENT_IMAGE_PLACEHOLDER = '/placeholder-event.svg'
 
@@ -69,7 +71,11 @@ export function toHttps(url?: string): string | undefined {
   return url.replace(/^http:/, 'https:')
 }
 
-export function toHighResTicketmasterUrl(url?: string): string | undefined {
+/**
+ * Yalnızca zaten yüksek çözünürlüklü Ticketmaster URL’lerini aynı ailede büyütür.
+ * Düşük çözünürlüklü / farklı oranlı görselleri LARGE_16_9’a zorlamaz (bulanık kırpma üretir).
+ */
+export function toHighResTicketmasterUrl(url?: string, meta?: { width?: number }): string | undefined {
   const secure = toHttps(url)
   if (!secure) {
     return undefined
@@ -79,8 +85,17 @@ export function toHighResTicketmasterUrl(url?: string): string | undefined {
     return secure
   }
 
-  // SOURCE’u TABLET_LANDSCAPE’e çevirme — CDN çoğu attraction için 403 döner
   if (/_(SOURCE)(?:\.(?:jpe?g|png|webp))?$/i.test(secure)) {
+    return secure
+  }
+
+  // Küçük görselleri upscale etme
+  if ((meta?.width ?? PREFERRED_EVENT_IMAGE_WIDTH) < PREFERRED_EVENT_IMAGE_WIDTH) {
+    return secure
+  }
+
+  // Yalnızca 16:9 ailesini LARGE’a yükselt
+  if (!/16_9|LANDSCAPE_LARGE/i.test(secure)) {
     return secure
   }
 
@@ -90,39 +105,91 @@ export function toHighResTicketmasterUrl(url?: string): string | undefined {
 
 function isLandscapeCover(image: TicketmasterImage): boolean {
   const url = image.url || ''
-  return image.ratio === '16_9' || url.includes('16_9') || url.includes('LANDSCAPE')
+  if (image.ratio === '16_9' || url.includes('16_9') || /LANDSCAPE/i.test(url)) {
+    return true
+  }
+  const w = image.width ?? 0
+  const h = image.height ?? 0
+  return w > 0 && h > 0 && w / h >= 1.4
+}
+
+function imageArea(image: TicketmasterImage): number {
+  const w = image.width ?? 0
+  const h = image.height ?? 0
+  if (w && h) {
+    return w * h
+  }
+  return w * w
+}
+
+/**
+ * images[0] kullanılmaz.
+ * 16:9 / landscape tercih → genişlik×yükseklik sırala → ≥1024 tercih → yoksa ≥640 → yoksa undefined.
+ * Düşük çözünürlük büyütülmez.
+ */
+export function pickBestCoverFromImages(
+  images?: TicketmasterImage[],
+  minWidth = MIN_EVENT_IMAGE_WIDTH
+): string | undefined {
+  if (!images?.length) {
+    return undefined
+  }
+
+  const usable = images.filter(image => Boolean(image.url) && !image.fallback)
+  const pool = usable.length ? usable : images.filter(image => Boolean(image.url))
+  if (!pool.length) {
+    return undefined
+  }
+
+  const wideEnough = pool.filter(image => (image.width ?? 0) >= minWidth)
+  if (!wideEnough.length) {
+    return undefined
+  }
+
+  const preferred = wideEnough.filter(image => (image.width ?? 0) >= PREFERRED_EVENT_IMAGE_WIDTH)
+  const candidates = preferred.length ? preferred : wideEnough
+
+  const landscape = candidates.filter(isLandscapeCover)
+  const ranked = [...(landscape.length ? landscape : candidates)].sort(
+    (a, b) => imageArea(b) - imageArea(a) || (b.width ?? 0) - (a.width ?? 0)
+  )
+
+  const best = ranked[0]
+  if (!best?.url) {
+    return undefined
+  }
+
+  return toHighResTicketmasterUrl(best.url, { width: best.width }) || toHttps(best.url)
 }
 
 /**
  * Ticketmaster görsellerinden kart/detay için en net adresi seçer.
- * images[0] kullanılmaz: 16:9 tercih, fallback’ten kaçın, width’e göre sırala, min 640px.
  */
 export function getBestEventImage(images?: TicketmasterImage[]): string {
-  if (!images?.length) {
-    return EVENT_IMAGE_PLACEHOLDER
+  return pickBestCoverFromImages(images) || EVENT_IMAGE_PLACEHOLDER
+}
+
+/**
+ * Event afişi → attraction yüksek çözünürlüklü landscape → placeholder.
+ * Düşük çözünürlüklü afişi kartta büyütmez.
+ */
+export function resolveEventCoverImage(event: {
+  images?: TicketmasterImage[]
+  _embedded?: { attractions?: TicketmasterAttraction[] }
+}): string {
+  const fromEvent = pickBestCoverFromImages(event.images)
+  if (fromEvent) {
+    return fromEvent
   }
 
-  const usable = images.filter(image => Boolean(image.url))
-  if (!usable.length) {
-    return EVENT_IMAGE_PLACEHOLDER
+  for (const attraction of event._embedded?.attractions ?? []) {
+    const fromAttraction = pickBestCoverFromImages(attraction.images)
+    if (fromAttraction) {
+      return fromAttraction
+    }
   }
 
-  const nonFallback = usable.filter(image => !image.fallback)
-  let pool = nonFallback.length ? nonFallback : usable
-
-  const sharp = pool.filter(image => (image.width ?? 0) >= MIN_EVENT_IMAGE_WIDTH)
-  if (!sharp.length) {
-    return EVENT_IMAGE_PLACEHOLDER
-  }
-  pool = sharp
-
-  const landscape = pool.filter(isLandscapeCover)
-  if (landscape.length) {
-    pool = landscape
-  }
-
-  const ranked = [...pool].sort((a, b) => (b.width ?? 0) - (a.width ?? 0))
-  return toHighResTicketmasterUrl(ranked[0]?.url) || EVENT_IMAGE_PLACEHOLDER
+  return EVENT_IMAGE_PLACEHOLDER
 }
 
 /** @deprecated getBestEventImage kullanın */
@@ -131,8 +198,8 @@ export function pickEventImage(images?: TicketmasterImage[]): string {
 }
 
 /**
- * Attraction görselleri: SOURCE/ARTIST_PAGE tercih et.
- * Event afişindeki gibi SOURCE→TABLET zorlaması attraction CDN’de sık 403 veriyor.
+ * Attraction görselleri: SOURCE/ARTIST_PAGE tercih et (logo/avatar).
+ * Kart kapağı için resolveEventCoverImage / pickBestCoverFromImages kullanın.
  */
 export function getBestAttractionImage(images?: TicketmasterImage[]): string | undefined {
   if (!images?.length) {
@@ -157,8 +224,7 @@ export function getBestAttractionImage(images?: TicketmasterImage[]): string | u
     return toHttps(artistPage.url)
   }
 
-  const best = getBestEventImage(images)
-  return best === EVENT_IMAGE_PLACEHOLDER ? undefined : best
+  return pickBestCoverFromImages(images)
 }
 
 export function formatEventDate(dates?: TicketmasterDates): string {
@@ -267,7 +333,7 @@ export function mapAttraction(attraction: TicketmasterAttraction): AttractionSum
 export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
   const venue = event._embedded?.venues?.[0]
   const classification = getPrimaryClassification(event.classifications)
-  const eventImage = getBestEventImage(event.images)
+  const eventImage = resolveEventCoverImage(event)
   const rawAttractions = event._embedded?.attractions ?? []
 
   const attractions = rawAttractions.map((attraction) => {
@@ -314,9 +380,9 @@ export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetai
       if (coverScore !== 0) {
         return coverScore
       }
-      return (b.width ?? 0) - (a.width ?? 0)
+      return imageArea(b) - imageArea(a)
     })
-    .map(image => toHighResTicketmasterUrl(image.url))
+    .map(image => toHighResTicketmasterUrl(image.url, { width: image.width }) || toHttps(image.url))
     .filter((url): url is string => Boolean(url))
 
   const images = uniqueGalleryImages([

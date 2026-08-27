@@ -68,24 +68,54 @@ describe('etkinlik yardımcıları', () => {
     expect(getBestEventImage(images)).toBe(EVENT_IMAGE_PLACEHOLDER)
   })
 
-  it('küçük 16:9 yerine yüksek çözünürlüklü görseli seçer', () => {
+  it('küçük 16:9 yerine yüksek çözünürlüklü görseli seçer (oranı zorla değiştirmez)', () => {
     const images = [
       { url: 'https://s1.ticketm.net/dam/a/abc/tiny_RECOMENDATION_16_9.jpg', ratio: '16_9', width: 305, height: 171, fallback: false },
       { url: 'https://s1.ticketm.net/dam/a/abc/wide_TABLET_LANDSCAPE_3_2.jpg', ratio: '3_2', width: 2048, height: 1365, fallback: false }
     ]
-    expect(getBestEventImage(images)).toBe('https://s1.ticketm.net/dam/a/abc/wide_TABLET_LANDSCAPE_LARGE_16_9.jpg')
+    expect(getBestEventImage(images)).toBe('https://s1.ticketm.net/dam/a/abc/wide_TABLET_LANDSCAPE_3_2.jpg')
   })
 
-  it('Ticketmaster CDN adresini büyük 16:9 varyanta yükseltir', () => {
+  it('≥1024 16:9 Ticketmaster URL’sini LARGE varyanta yükseltir', () => {
     expect(toHighResTicketmasterUrl(
-      'https://s1.ticketm.net/dam/a/abc/event_RECOMENDATION_16_9.jpg'
+      'https://s1.ticketm.net/dam/a/abc/event_RECOMENDATION_16_9.jpg',
+      { width: 1024 }
     )).toBe('https://s1.ticketm.net/dam/a/abc/event_TABLET_LANDSCAPE_LARGE_16_9.jpg')
+  })
+
+  it('küçük Ticketmaster URL’sini LARGE’a zorlamaz', () => {
+    expect(toHighResTicketmasterUrl(
+      'https://s1.ticketm.net/dam/a/abc/event_RECOMENDATION_16_9.jpg',
+      { width: 305 }
+    )).toBe('https://s1.ticketm.net/dam/a/abc/event_RECOMENDATION_16_9.jpg')
   })
 
   it('SOURCE attraction görselini TABLET’e zorlamaz', () => {
     expect(toHighResTicketmasterUrl(
       'https://s1.ticketm.net/dam/a/8f1/c3ba26f9-47ce-4ec0-bd0e-645a71e278f1_SOURCE'
     )).toBe('https://s1.ticketm.net/dam/a/8f1/c3ba26f9-47ce-4ec0-bd0e-645a71e278f1_SOURCE')
+  })
+
+  it('event afişi yoksa attraction landscape kapağına düşer', () => {
+    const mapped = mapTicketmasterEvent({
+      ...sampleEvent,
+      images: [
+        { url: 'https://s1.ticketm.net/dam/tiny_RECOMENDATION_16_9.jpg', ratio: '16_9', width: 200, height: 112, fallback: false }
+      ],
+      _embedded: {
+        ...sampleEvent._embedded,
+        attractions: [
+          {
+            id: 'a1',
+            name: 'Artist',
+            images: [
+              { url: 'https://cdn.example/artist_RETINA_LANDSCAPE_16_9.jpg', ratio: '16_9', width: 1200, height: 675, fallback: false }
+            ]
+          }
+        ]
+      }
+    })
+    expect(mapped.image).toBe('https://cdn.example/artist_RETINA_LANDSCAPE_16_9.jpg')
   })
 
   it('tarihi biçimler', () => {
