@@ -1,25 +1,48 @@
 # Evently
 
-Ticketmaster Discovery API 2.0 üzerinden Birleşik Krallık (UK / `countryCode=GB`) pazarındaki gerçek etkinlik verisini çeken, Nuxt 4 + Nuxt UI ile yazılmış etkinlik keşif uygulaması. Aktif market `shared/utils/market.ts` üzerinden değiştirilebilir; TR tanımı ileride seçenek olarak hazır.
+Ticketmaster Discovery API 2.0 ile Birleşik Krallık (UK / `countryCode=GB`) pazarındaki gerçek etkinlikleri listeleyen etkinlik keşif uygulaması.
 
-Marka: **Evently**. Bilet konsepti: **Admit One**.
+- **Stack:** Nuxt 4 · Nuxt UI · TypeScript · Pinia · Zod · Vitest  
+- **Marka:** Evently · **Bilet konsepti:** Admit One  
+- **Repo:** https://github.com/aksoyece/etkinlik-kesif-uygulamasi  
+- **Canlı:** https://etkinlik-kesif-uygulamasi.vercel.app  
 
-## Özellikler
+Aktif market `shared/utils/market.ts` üzerinden yönetilir; TR tanımı ileride seçenek olarak hazırdır.
 
-- Yaklaşan etkinlikleri listeleme
-- Kartlarda ad, görsel, tarih, şehir, mekan ve kategori
-- Arama, şehir / kategori / tarih filtreleri, sıralama ve sayfalama
-- Etkinlik detayı: etkinlik, sanatçı ve mekan bilgisi
+## Task gereksinimleri
+
+| # | Gereksinim | Durum |
+|---|------------|--------|
+| 1 | Ana sayfada yaklaşan etkinlikler listelenir | Tamam — öne çıkan / bu hafta seçkisi + hızlı arama |
+| 2 | Etkinlikler API üzerinden alınır | Tamam — `/api/events`, Ticketmaster Discovery |
+| 3 | Kartlarda isim, görsel, tarih, şehir, mekan, kategori | Tamam — `EventCard` |
+| 4 | Etkinlik arama | Tamam — keyword + anasayfa autocomplete |
+| 5 | Şehir, kategori ve tarih filtreleri | Tamam — `EventFilters` |
+| 6 | Sıralama | Tamam — tarih artan/azalan vb. |
+| 7 | Pagination | Tamam — `UPagination` |
+| 8 | Etkinlik detay sayfası | Tamam — `/events/[id]` |
+| 9 | Detayda etkinlik, sanatçı ve mekan bilgisi | Tamam |
+| 10 | Favorilere ekleme | Tamam |
+| 11 | Favoriler Pinia + Local Storage | Tamam — `stores/favorites.ts` |
+| 12 | API işlemleri composable yapısında | Tamam — `useEvents`, `useEvent`, `useVenue`… |
+| 13 | Loading / error / empty state | Tamam — liste, detay, anasayfa |
+| 14 | Nuxt UI componentleri | Tamam |
+| 15 | Responsive tasarım | Tamam |
+| 16 | Dark / light mode | Tamam — `UColorModeButton` |
+| 17 | TypeScript | Tamam |
+| 18 | Form / etkileşim validation | Tamam — Zod + `UForm` |
+| 19 | Temel testler | Tamam — Vitest (`npm run test`) |
+| 20 | GitHub + README | Tamam |
+
+## Özellikler (ek)
+
 - Takvime ekle (.ics) ve Google Takvim
 - Bağlantı paylaşımı
-- Etkinlik detayında görsel galerisi
-- Favorileri tarihe göre sıralama
+- Detayda görsel galerisi ve benzer etkinlikler
+- Popüler isimler bölümü
 - SEO (Open Graph + JSON-LD)
-- Ticketmaster yanıtları için sunucu önbelleği
-- Yükleniyor, hata ve boş durumları
-- Koyu / açık tema
-- TypeScript ve Zod doğrulaması
-- Temel birim testleri
+- Ticketmaster sunucu önbelleği
+- Kompakt ticket temalı footer
 
 ## Kurulum
 
@@ -34,11 +57,8 @@ cp .env.example .env
 NUXT_TICKETMASTER_API_KEY=your_key
 ```
 
-Anahtar: [Ticketmaster Developer Portal](https://developer.ticketmaster.com/)
-
-API dokümantasyonu: [Discovery API v2](https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/)
-
-Geliştirme sunucusu:
+Anahtar: [Ticketmaster Developer Portal](https://developer.ticketmaster.com/)  
+API: [Discovery API v2](https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/)
 
 ```bash
 npm run dev
@@ -46,30 +66,28 @@ npm run dev
 
 Adres: `http://localhost:3000`
 
-Canlı site: https://etkinlik-kesif-uygulamasi.vercel.app
-
 ## Vercel ortam değişkeni
 
 Ticketmaster anahtarı tarayıcıya gitmez; yalnızca sunucuda okunur.
 
-1. [Vercel Dashboard](https://vercel.com) > proje > **Settings** > **Environment Variables**
+1. [Vercel Dashboard](https://vercel.com) → proje → **Settings** → **Environment Variables**
 2. `NUXT_TICKETMASTER_API_KEY` ekleyin (Production / Preview / Development)
 3. Redeploy edin
 
 Anahtar yoksa `/api/events` 500 döner.
 
-## Teslim notu: “Bilet al” / Ticketmaster kısıtı
+## Teslim notu: “Bilet al” / Ticketmaster
 
 Uygulama **etkinlik keşif** amaçlıdır. “Ticketmaster’da bilet al” butonu Discovery API’den gelen resmi bilet URL’sini yeni sekmede açar; ödeme Evently içinde yapılmaz.
 
-`queue-it.net` / `queueittoken` içeren oturuma özel URL’ler **asla** kaydedilmez veya butona verilmez; Queue-it yalnızca kullanıcının kendi tarayıcısında, Ticketmaster sitesi tarafından tetiklenmelidir.
+`queue-it.net` / `queueittoken` içeren oturuma özel URL’ler kaydedilmez. UK pazarında Ticketmaster bazen Queue-it ile erişim kısıtı gösterebilir; bu satıcı tarafı bir durumdur.
 
-UK pazarında Ticketmaster bazen **Queue-it** ile “access has been restricted” gösterebilir (bölge, IP veya kuyruk koruması). Bu satıcı tarafı kısıtıdır; uygulamanın link üretimi veya keşif akışı bozuk demek değildir.
+Değerlendirme için kısa kontrol:
 
-Değerlendirme için kontrol listesi:
-- Keşfet / Etkinlikler listesi ve filtreler
-- Etkinlik detayı, favori, takvim, paylaşım
-- “Ticketmaster’da bilet al”ın dış siteye yönlendirmesi (engel çıkarsa Queue-it ekranı beklenen bir durum olabilir)
+- Keşfet / Etkinlikler listesi, arama, filtre, sıralama, sayfalama
+- Etkinlik detayı (sanatçı + mekan), favori (Pinia + localStorage)
+- Loading / error / empty, dark-light, responsive
+- “Ticketmaster’da bilet al” dış siteye gider
 
 ## Komutlar
 
@@ -86,26 +104,38 @@ npm run typecheck
 ```
 app/
   pages/
-    index.vue
-    events/index.vue
-    events/[id].vue
-    favorites.vue
+    index.vue              # Keşfet (öne çıkanlar, arama, popüler isimler)
+    events/index.vue       # Katalog: arama, filtre, sıralama, pagination
+    events/[id].vue        # Detay
+    favorites.vue          # Favoriler
   components/
     EventCard.vue
     EventList.vue
     EventFilters.vue
     EventSearch.vue
     AppHeader.vue
+    AppFooter.vue
+    PopularArtists.vue
+    QuickSearchResults.vue
+    …
   composables/
-    useEvents.ts
+    useEvents.ts           # Liste + detay + explorer
     useVenues.ts
     useClassifications.ts
+    usePopularArtists.ts
+    useSimilarEvents.ts
+    …
   stores/
-    favorites.ts
+    favorites.ts           # Pinia + localStorage
   types/
     event.ts
 server/api/
+  events.get.ts
+  events/[id].get.ts
+  venues/[id].get.ts
+  classifications.get.ts
 shared/utils/
+test/                      # Vitest birim testleri
 ```
 
 Nuxt 4 kaynak dizinini `app/` altında tutar.
