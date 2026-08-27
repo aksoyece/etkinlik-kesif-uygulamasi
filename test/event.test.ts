@@ -97,6 +97,15 @@ describe('etkinlik yardımcıları', () => {
     expect(mapped.genre).toBe('Jazz')
     expect(mapped.status).toBe('onsale')
     expect(mapped.image).toBe('https://cdn.example/cover.jpg')
+    expect(mapped.url).toBe('http://ticketmaster.com/event/evt-1')
+  })
+
+  it('Queue-it bilet URL’lerini map sırasında düşürür', () => {
+    const mapped = mapTicketmasterEvent({
+      ...sampleEvent,
+      url: 'https://ticketmastersportuk.queue-it.net/softblock/?c=x&queueittoken=abc'
+    })
+    expect(mapped.url).toBeUndefined()
   })
 
   it('favori ekler ve çıkarır', () => {

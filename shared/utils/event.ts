@@ -13,6 +13,7 @@ import type {
   VenueSummary
 } from '../types/event'
 import { localizeAddressLine, localizeCountryName } from './localize'
+import { resolveTicketUrl } from './ticketUrl'
 
 export const FAVORITES_STORAGE_KEY = 'etkinlik-favoriler'
 export const LAST_CITY_STORAGE_KEY = 'etkinlik-son-sehir'
@@ -234,7 +235,7 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
   return {
     id: event.id,
     name: event.name,
-    url: event.url,
+    url: resolveTicketUrl(event.url, { eventId: event.id }),
     image: getBestEventImage(event.images),
     dateLabel: formatEventDate(event.dates),
     localDate: event.dates?.start?.localDate,
@@ -275,7 +276,7 @@ export function mapTicketmasterEventDetail(event: TicketmasterEvent): EventDetai
     ...summary,
     info: event.info || event.description,
     pleaseNote: event.pleaseNote,
-    ticketUrl: event.url,
+    ticketUrl: resolveTicketUrl(event.url, { eventId: event.id }),
     status: event.dates?.status?.code,
     seatmap: event.seatmap?.staticUrl,
     priceLabel: formatPriceRange(event.priceRanges),

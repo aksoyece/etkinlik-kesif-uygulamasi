@@ -15,15 +15,16 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: 'tr'
       },
-      title: 'Evently - Etkinlik Keşif',
+      title: 'Evently',
+      titleTemplate: 'Evently',
       meta: [
         { name: 'description', content: 'Evently ile yaklaşan konser, spor ve sanat etkinliklerini bilet stub estetiğiyle keşfedin.' },
-        { property: 'og:title', content: 'Evently - Etkinlik Keşif' },
+        { property: 'og:title', content: 'Evently' },
         { property: 'og:description', content: 'Yaklaşan konser, spor ve sanat etkinliklerini keşfedin. Admit One bilet konsepti.' },
         { property: 'og:image', content: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=630&fit=crop&q=80' },
         { property: 'og:type', content: 'website' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'Evently - Etkinlik Keşif' },
+        { name: 'twitter:title', content: 'Evently' },
         { name: 'twitter:description', content: 'Yaklaşan konser, spor ve sanat etkinliklerini keşfedin.' },
         { name: 'twitter:image', content: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=630&fit=crop&q=80' }
       ],

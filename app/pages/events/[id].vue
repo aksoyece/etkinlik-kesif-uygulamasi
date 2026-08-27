@@ -3,6 +3,7 @@ import { mapsUrl, toFavoriteEvent, uniqueGalleryImages } from '#shared/utils/eve
 import { buildGoogleCalendarUrl, buildIcsContent } from '#shared/utils/calendar'
 import { translateCategory, translateGenre, translateStatus } from '#shared/utils/labels'
 import { applyLocaleFixes } from '#shared/utils/localize'
+import { isValidTicketUrl } from '#shared/utils/ticketUrl'
 
 const route = useRoute()
 const requestUrl = useRequestURL()
@@ -30,6 +31,7 @@ const venueBoxOffice = computed(() => venueInfo.value?.boxOffice ? applyLocaleFi
 const venueParking = computed(() => venueInfo.value?.parkingDetail ? applyLocaleFixes(venueInfo.value.parkingDetail) : undefined)
 const venueRules = computed(() => venueInfo.value?.generalRule ? applyLocaleFixes(venueInfo.value.generalRule) : undefined)
 const venueAddress = computed(() => venueInfo.value?.address)
+const canBuyTicket = computed(() => isValidTicketUrl(event.value?.ticketUrl))
 
 const selectedImage = ref<string | null>(null)
 const galleryOpen = computed({
@@ -57,14 +59,14 @@ watch(error, (newError) => {
 }, { immediate: true })
 
 useSeoMeta({
-  title: () => event.value?.name || 'Etkinlik detayı',
+  title: 'Evently',
   description: () => event.value?.info || `${event.value?.name || 'Etkinlik'} — ${event.value?.dateLabel || ''}`.trim(),
-  ogTitle: () => event.value?.name || 'Etkinlik detayı',
+  ogTitle: () => event.value?.name || 'Evently',
   ogDescription: () => event.value?.info || event.value?.name || 'Etkinlik detayı',
   ogImage: () => event.value?.image,
   ogUrl: () => pageUrl.value,
   twitterCard: 'summary_large_image',
-  twitterTitle: () => event.value?.name || 'Etkinlik detayı',
+  twitterTitle: () => event.value?.name || 'Evently',
   twitterDescription: () => event.value?.info || event.value?.name,
   twitterImage: () => event.value?.image
 })
@@ -97,7 +99,7 @@ useHead(() => {
                 'address': venueInfo.value.address
               }
             : undefined,
-          'offers': event.value.ticketUrl
+          'offers': canBuyTicket.value && event.value.ticketUrl
             ? {
                 '@type': 'Offer',
                 'url': event.value.ticketUrl,
@@ -164,19 +166,26 @@ function toggleFavorite() {
 
 function openTicketPage() {
   const url = event.value?.ticketUrl
-  if (!url) {
+  if (!isValidTicketUrl(url) || !url) {
+    toast.add({
+      title: 'Bilet linki kullanılamıyor',
+      description: 'Geçerli bir Ticketmaster etkinlik linki yok. Daha sonra tekrar deneyin.',
+      color: 'warning',
+      icon: 'i-lucide-link-off'
+    })
     return
   }
 
   toast.add({
     title: 'Ticketmaster’a yönlendiriliyorsunuz',
-    description: 'Bilet satışı dış sitededir. “Access restricted” görürseniz bu Ticketmaster kuyruk/bölge kısıtıdır; uygulama hatası değildir.',
+    description: 'Bilet satışı dış sitededir. Yoğunlukta Ticketmaster kendi kuyruğunu (Queue-it) açabilir; bu Evently’nin ürettiği bir link değildir.',
     color: 'neutral',
     icon: 'i-lucide-external-link'
   })
 
   if (import.meta.client) {
-    window.open(url, '_blank', 'noopener,noreferrer')
+    // noopener yeterli; bazı satıcı akışları referrer bekleyebilir
+    window.open(url, '_blank', 'noopener')
   }
 }
 
@@ -381,13 +390,23 @@ const barcodeStyle = computed(() => {
                   {{ favorited ? 'Favorilerde' : 'Favorilere ekle' }}
                 </UButton>
                 <UButton
-                  v-if="event.ticketUrl"
+                  v-if="canBuyTicket"
                   size="lg"
                   trailing-icon="i-lucide-external-link"
                   class="transition-transform duration-200 hover:scale-105 active:scale-95"
                   @click="openTicketPage"
                 >
                   Ticketmaster’da bilet al
+                </UButton>
+                <UButton
+                  v-else
+                  size="lg"
+                  trailing-icon="i-lucide-link-off"
+                  color="neutral"
+                  variant="outline"
+                  disabled
+                >
+                  Bilet linki güncelleniyor
                 </UButton>
                 <UButton
                   color="neutral"
@@ -421,12 +440,15 @@ const barcodeStyle = computed(() => {
                   Paylaş
                 </UButton>
               </div>
-              <p
-                v-if="event.ticketUrl"
-                class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed max-w-xl"
-              >
-                Bilet satışı Ticketmaster üzerinden yapılır. Uygulama yalnızca etkinlik keşfi sağlar;
-                kuyruk, bölge veya IP kısıtları satıcı sitesine aittir.
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed max-w-xl">
+                <template v-if="canBuyTicket">
+                  Bilet satışı Ticketmaster üzerinden yapılır. Uygulama yalnızca keşif sağlar;
+                  açılan sayfada Ticketmaster kendi kuyruğunu (Queue-it) başlatabilir.
+                </template>
+                <template v-else>
+                  Bu etkinlik için güvenli bir bilet linki yok. Queue-it oturum linkleri saklanmaz;
+                  lütfen daha sonra tekrar deneyin.
+                </template>
               </p>
 
               <!-- 8. Barkod Deseni Çeşitliliği: Detay sayfasındaki bilet stub'ına da dinamik barkod eklendi -->

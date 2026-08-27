@@ -5,7 +5,7 @@ const favorites = useFavoritesStore()
 const sortedFavorites = computed(() => sortFavoritesByDate(favorites.items))
 
 useSeoMeta({
-  title: 'Favoriler',
+  title: 'Evently',
   description: 'Kaydettiğiniz yaklaşan etkinlikler, tarihe göre sıralanır.'
 })
 

@@ -217,24 +217,16 @@ const passStats = computed(() => [
       id="spotlight"
       class="scroll-mt-24 space-y-6"
     >
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <div class="space-y-1">
-          <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
-            Öne çıkan
-          </p>
-          <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
-            Öne çıkan etkinlikler
-          </h2>
-        </div>
-        <UButton
-          to="/events"
-          color="neutral"
-          variant="link"
-          trailing-icon="i-lucide-arrow-right"
-          class="px-0"
-        >
-          Tüm etkinlikleri gör
-        </UButton>
+      <div class="space-y-1">
+        <p class="font-ticket text-xs text-neutral-400 dark:text-neutral-500 tracking-widest">
+          Öne çıkan
+        </p>
+        <h2 class="font-ticket text-2xl text-[#1A1A1A] dark:text-[#F7F5F0]">
+          Öne çıkan etkinlikler
+        </h2>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          Bu hafta dikkat çeken seçkiler.
+        </p>
       </div>
 
       <div

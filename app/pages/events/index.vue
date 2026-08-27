@@ -15,7 +15,7 @@ const {
 } = useEventExplorer()
 
 useSeoMeta({
-  title: 'Etkinlikler',
+  title: 'Evently',
   description: 'Tüm yaklaşan etkinlikleri arayın, filtreleyin ve sıralayın.'
 })
 </script>

@@ -62,6 +62,8 @@ Anahtar yoksa `/api/events` 500 döner.
 
 Uygulama **etkinlik keşif** amaçlıdır. “Ticketmaster’da bilet al” butonu Discovery API’den gelen resmi bilet URL’sini yeni sekmede açar; ödeme Evently içinde yapılmaz.
 
+`queue-it.net` / `queueittoken` içeren oturuma özel URL’ler **asla** kaydedilmez veya butona verilmez; Queue-it yalnızca kullanıcının kendi tarayıcısında, Ticketmaster sitesi tarafından tetiklenmelidir.
+
 UK pazarında Ticketmaster bazen **Queue-it** ile “access has been restricted” gösterebilir (bölge, IP veya kuyruk koruması). Bu satıcı tarafı kısıtıdır; uygulamanın link üretimi veya keşif akışı bozuk demek değildir.
 
 Değerlendirme için kontrol listesi:
