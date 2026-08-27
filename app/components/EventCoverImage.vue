@@ -55,29 +55,31 @@ watch(() => props.src, () => {
 </script>
 
 <template>
-  <div class="absolute inset-0 overflow-hidden bg-neutral-900">
-    <!-- Soft / Universe / SOURCE: koyu bulanık dolgu + net contain -->
+  <div class="absolute inset-0 overflow-hidden bg-neutral-950">
+    <!-- Soft / Universe / SOURCE: tam alan blur arka plan + padding’li contain -->
     <template v-if="useBlurFrame">
       <img
         :src="optimizedSrc"
         alt=""
         aria-hidden="true"
-        class="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl brightness-[0.4] saturate-75"
+        class="pointer-events-none absolute inset-0 h-full w-full scale-150 object-cover blur-[48px] brightness-[0.28] contrast-125 saturate-50"
         loading="lazy"
         decoding="async"
       >
-      <div class="absolute inset-0 bg-black/40" />
-      <img
-        :src="optimizedSrc"
-        :alt="alt"
-        class="relative z-[1] h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-[1.02]"
-        :loading="eager ? 'eager' : 'lazy'"
-        decoding="async"
-        @error="onError"
-      >
+      <div class="pointer-events-none absolute inset-0 bg-black/55" />
+      <div class="absolute inset-0 z-[1] flex items-center justify-center p-3 sm:p-4">
+        <img
+          :src="optimizedSrc"
+          :alt="alt"
+          class="max-h-full max-w-full object-contain object-center drop-shadow-md transition-transform duration-500 group-hover:scale-[1.02]"
+          :loading="eager ? 'eager' : 'lazy'"
+          decoding="async"
+          @error="onError"
+        >
+      </div>
     </template>
 
-    <!-- Yüksek çözünürlüklü 16:9: cover -->
+    <!-- Yüksek çözünürlüklü 16:9: cover (değişmedi) -->
     <img
       v-else
       :src="optimizedSrc"
