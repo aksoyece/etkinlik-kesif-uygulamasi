@@ -164,30 +164,7 @@ function toggleFavorite() {
   })
 }
 
-function openTicketPage() {
-  const url = event.value?.ticketUrl
-  if (!isValidTicketUrl(url) || !url) {
-    toast.add({
-      title: 'Bilet linki kullanılamıyor',
-      description: 'Geçerli bir Ticketmaster etkinlik linki yok. Daha sonra tekrar deneyin.',
-      color: 'warning',
-      icon: 'i-lucide-link-off'
-    })
-    return
-  }
 
-  toast.add({
-    title: 'Ticketmaster’a yönlendiriliyorsunuz',
-    description: 'Bilet satışı dış sitededir. Yoğunlukta Ticketmaster kendi kuyruğunu (Queue-it) açabilir; bu Evently’nin ürettiği bir link değildir.',
-    color: 'neutral',
-    icon: 'i-lucide-external-link'
-  })
-
-  if (import.meta.client) {
-    // noopener yeterli; bazı satıcı akışları referrer bekleyebilir
-    window.open(url, '_blank', 'noopener')
-  }
-}
 
 const categoryBadgeClass = computed(() => {
   if (!event.value) return 'bg-neutral-600 text-white'
@@ -390,11 +367,13 @@ const barcodeStyle = computed(() => {
                   {{ favorited ? 'Favorilerde' : 'Favorilere ekle' }}
                 </UButton>
                 <UButton
-                  v-if="canBuyTicket"
+                  v-if="canBuyTicket && event.ticketUrl"
+                  :href="event.ticketUrl"
+                  target="_blank"
+                  rel="noopener"
                   size="lg"
                   trailing-icon="i-lucide-external-link"
                   class="transition-transform duration-200 hover:scale-105 active:scale-95"
-                  @click="openTicketPage"
                 >
                   Ticketmaster’da bilet al
                 </UButton>
@@ -442,12 +421,10 @@ const barcodeStyle = computed(() => {
               </div>
               <p class="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed max-w-xl">
                 <template v-if="canBuyTicket">
-                  Bilet satışı Ticketmaster üzerinden yapılır. Uygulama yalnızca keşif sağlar;
-                  açılan sayfada Ticketmaster kendi kuyruğunu (Queue-it) başlatabilir.
+                  Bilet satışı Ticketmaster üzerinden yapılır; Evently yalnızca keşif sağlar.
                 </template>
                 <template v-else>
-                  Bu etkinlik için güvenli bir bilet linki yok. Queue-it oturum linkleri saklanmaz;
-                  lütfen daha sonra tekrar deneyin.
+                  Bu etkinlik için güvenli bir bilet linki yok. Lütfen daha sonra tekrar deneyin.
                 </template>
               </p>
 
