@@ -76,31 +76,4 @@ describe('pickPopularArtists', () => {
 
     expect(artist?.image).toBe('https://cdn.example/event.jpg')
   })
-
-  it('sonuçları kategoriler arasında çeşitlendirir', () => {
-    const pool: EventSummary[] = []
-    for (let i = 0; i < 6; i++) {
-      pool.push(event({
-        id: `fam-${i}`,
-        name: `Family ${i}`,
-        localDate: '2026-08-28',
-        category: 'Family',
-        status: 'onsale',
-        attractions: [{ name: `Family Act ${i}`, genre: 'Children' }]
-      }))
-      pool.push(event({
-        id: `mus-${i}`,
-        name: `Music ${i}`,
-        localDate: '2026-09-10',
-        category: 'Music',
-        status: 'onsale',
-        attractions: [{ name: `Band ${i}`, genre: 'Rock' }]
-      }))
-    }
-
-    const artists = pickPopularArtists(pool, 6)
-    const labels = artists.map(a => a.label)
-    expect(labels.some(l => /rock|music/i.test(l) || l === 'Rock')).toBe(true)
-    expect(labels.some(l => /child|family|children/i.test(l) || l === 'Children')).toBe(true)
-  })
 })

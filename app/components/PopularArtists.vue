@@ -64,7 +64,7 @@ watch(artists, async () => {
           Popüler sanatçılar
         </h2>
         <p class="text-sm text-neutral-500 dark:text-neutral-400">
-          Yaklaşan etkinliklerden öne çıkan isimler.
+          Yaklaşan müzik etkinliklerinden öne çıkan isimler.
         </p>
       </div>
 

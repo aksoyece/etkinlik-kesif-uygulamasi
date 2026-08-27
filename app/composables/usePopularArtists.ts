@@ -1,24 +1,25 @@
 import { pickPopularArtists } from '#shared/utils/popularArtists'
 
 const DEFAULT_LIMIT = 12
-const PER_CATEGORY_SIZE = 12
-
-/** Ticketmaster segment’leri — aile/müze ağırlıklı “date,asc” havuzunu dengelemek için */
-const ARTIST_CATEGORIES = ['Music', 'Sports', 'Arts & Theatre', 'Family'] as const
+/** API sayfa boyutu 20 ile sınırlı; 4 sayfa ≈ 80 müzik etkinliği */
+const DEFAULT_POOL_SIZE = 80
+const PAGE_SIZE = 20
 
 /**
- * Liste API’sindeki yaklaşan etkinliklerden popüler sanatçıları türetir.
- * Her ana kategoriden ayrı havuz çeker; tek bir “trending” endpoint kullanmaz.
+ * Popüler sanatçılar yalnızca Music kategorisindeki yaklaşan etkinliklerden türetilir.
+ * EventFilters / keşif ile aynı `classificationName: 'Music'` parametresi kullanılır.
  */
-export function usePopularArtists(options?: { limit?: number }) {
+export function usePopularArtists(options?: { limit?: number, poolSize?: number }) {
   const limit = options?.limit ?? DEFAULT_LIMIT
+  const poolSize = options?.poolSize ?? DEFAULT_POOL_SIZE
+  const pageCount = Math.max(1, Math.ceil(poolSize / PAGE_SIZE))
 
-  const pools = ARTIST_CATEGORIES.map(classificationName =>
+  const pools = Array.from({ length: pageCount }, (_, index) =>
     useEvents({
-      classificationName,
-      sort: 'relevance,desc',
-      size: PER_CATEGORY_SIZE,
-      page: 1
+      classificationName: 'Music',
+      sort: 'date,asc',
+      size: PAGE_SIZE,
+      page: index + 1
     })
   )
 
