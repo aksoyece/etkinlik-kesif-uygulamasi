@@ -27,31 +27,14 @@ watch(
 
 <template>
   <UApp>
-    <AppHeader />
+    <div class="flex min-h-dvh flex-col">
+      <AppHeader />
 
-    <UMain>
-      <NuxtPage />
-    </UMain>
+      <UMain class="flex-1">
+        <NuxtPage />
+      </UMain>
 
-    <USeparator />
-
-    <UFooter :ui="{ container: 'max-w-7xl' }">
-      <template #left>
-        <p class="font-ticket text-xs text-muted tracking-widest">
-          Evently • Admit One • {{ new Date().getFullYear() }}
-        </p>
-      </template>
-      <template #right>
-        <UButton
-          to="https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/"
-          target="_blank"
-          color="neutral"
-          variant="ghost"
-          trailing-icon="i-lucide-arrow-up-right"
-        >
-          API dokümantasyonu
-        </UButton>
-      </template>
-    </UFooter>
+      <AppFooter />
+    </div>
   </UApp>
 </template>
