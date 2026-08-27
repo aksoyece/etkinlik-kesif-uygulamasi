@@ -60,9 +60,8 @@ const aboutLinks = [
             to="/"
             class="inline-flex items-center gap-2 group"
           >
-            <UIcon
-              name="i-lucide-ticket"
-              class="size-5 text-[#E8432E] transition-transform duration-200 group-hover:scale-105"
+            <AppLogo
+              size="h-5 w-8 transition-transform duration-200 group-hover:scale-105"
             />
             <span class="font-ticket text-base font-bold tracking-tight text-[#1A1A1A] dark:text-[#F7F5F0]">
               Evently

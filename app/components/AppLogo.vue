@@ -1,0 +1,42 @@
+<script setup lang="ts">
+withDefaults(defineProps<{
+  size?: string
+}>(), {
+  size: 'h-6 w-9'
+})
+</script>
+
+<template>
+  <!-- Marka logosu: kenar çentikli bilet + ortada çift çubuk -->
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 72 44"
+    fill="none"
+    :class="['flex-none text-[#E8432E]', size]"
+    aria-hidden="true"
+  >
+    <path
+      stroke="currentColor"
+      stroke-width="5.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      d="M14 7.5h44c3.6 0 6.5 2.9 6.5 6.5v3.2c0 .7.4 1.35 1.05 1.65a6.25 6.25 0 0 1 0 11.3c-.65.3-1.05.95-1.05 1.65V30c0 3.6-2.9 6.5-6.5 6.5H14c-3.6 0-6.5-2.9-6.5-6.5v-3.2c0-.7-.4-1.35-1.05-1.65a6.25 6.25 0 0 1 0-11.3c.65-.3 1.05-.95 1.05-1.65V14c0-3.6 2.9-6.5 6.5-6.5Z"
+    />
+    <rect
+      x="29.5"
+      y="13"
+      width="4.8"
+      height="18"
+      rx="2.4"
+      fill="currentColor"
+    />
+    <rect
+      x="37.7"
+      y="13"
+      width="4.8"
+      height="18"
+      rx="2.4"
+      fill="currentColor"
+    />
+  </svg>
+</template>
