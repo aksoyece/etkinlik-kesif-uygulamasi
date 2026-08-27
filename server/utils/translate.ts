@@ -124,37 +124,6 @@ async function translateViaMyMemory(text: string): Promise<string | null> {
   return null
 }
 
-async function translateViaLibre(text: string): Promise<string | null> {
-  const endpoints = [
-    'https://libretranslate.com/translate',
-    'https://translate.argosopentech.com/translate'
-  ]
-
-  for (const endpoint of endpoints) {
-    try {
-      const result = await $fetch<{ translatedText?: string }>(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: {
-          q: text,
-          source: 'en',
-          target: 'tr',
-          format: 'text',
-          api_key: ''
-        },
-        timeout: 12000
-      })
-      const translated = result.translatedText?.trim()
-      if (translated && isAcceptableTranslation(text, translated)) {
-        return translated
-      }
-    } catch {
-      // try next endpoint
-    }
-  }
-  return null
-}
-
 /** Sağlayıcıları sırayla dene — Libre yavaş/kararsız, kritik yolda yok */
 async function translateChunkRaw(text: string): Promise<string | null> {
   return (
