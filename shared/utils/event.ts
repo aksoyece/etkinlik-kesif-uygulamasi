@@ -231,12 +231,22 @@ export function mapAttraction(attraction: TicketmasterAttraction): AttractionSum
 export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
   const venue = event._embedded?.venues?.[0]
   const classification = getPrimaryClassification(event.classifications)
+  const eventImage = getBestEventImage(event.images)
+
+  const attractions = (event._embedded?.attractions ?? []).map((attraction) => {
+    const mapped = mapAttraction(attraction)
+    const hasOwnImage = Boolean(mapped.image) && mapped.image !== EVENT_IMAGE_PLACEHOLDER
+    return {
+      ...mapped,
+      image: hasOwnImage ? mapped.image : (eventImage !== EVENT_IMAGE_PLACEHOLDER ? eventImage : mapped.image)
+    }
+  })
 
   return {
     id: event.id,
     name: event.name,
     url: resolveTicketUrl(event.url, { eventId: event.id }),
-    image: getBestEventImage(event.images),
+    image: eventImage,
     dateLabel: formatEventDate(event.dates),
     localDate: event.dates?.start?.localDate,
     localTime: event.dates?.start?.localTime,
@@ -247,7 +257,8 @@ export function mapTicketmasterEvent(event: TicketmasterEvent): EventSummary {
     category: classification?.segment?.name,
     genre: classification?.genre?.name,
     priceLabel: formatPriceRange(event.priceRanges),
-    status: event.dates?.status?.code
+    status: event.dates?.status?.code,
+    attractions: attractions.length ? attractions : undefined
   }
 }
 

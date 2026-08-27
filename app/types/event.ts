@@ -157,6 +157,8 @@ export interface EventSummary {
   priceLabel?: string
   /** Ticketmaster dates.status.code (onsale, offsale, cancelled, …) */
   status?: string
+  /** Liste yanıtındaki attractions (popüler sanatçılar vb.) */
+  attractions?: AttractionSummary[]
 }
 
 export interface AttractionSummary {
@@ -165,6 +167,17 @@ export interface AttractionSummary {
   url?: string
   image?: string
   genre?: string
+}
+
+/** Anasayfa “Popüler Sanatçılar” kartı — event attractions’tan türetilir */
+export interface PopularArtist {
+  id: string
+  name: string
+  image?: string
+  /** Tür veya kategori etiketi (ör. Rock, Spor) */
+  label: string
+  eventCount: number
+  soonestDate?: string
 }
 
 export interface VenueSummary {

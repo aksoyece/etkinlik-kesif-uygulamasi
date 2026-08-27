@@ -164,8 +164,6 @@ function toggleFavorite() {
   })
 }
 
-
-
 const categoryBadgeClass = computed(() => {
   if (!event.value) return 'bg-neutral-600 text-white'
   const cat = (event.value.category || '').toUpperCase()
