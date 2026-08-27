@@ -173,14 +173,16 @@ function onRangeComplete(value: DateRange) {
         </UButton>
 
         <template #content>
-          <div class="p-2 space-y-2">
-            <p class="px-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <div class="w-[min(100vw-1.5rem,20.5rem)] p-3">
+            <p class="mb-2 px-1 text-xs text-neutral-500 dark:text-neutral-400">
               Önce başlangıç, sonra bitiş gününü seçin.
             </p>
             <UCalendar
               v-model="dateRange"
               range
-              :number-of-months="2"
+              locale="tr-TR"
+              :number-of-months="1"
+              class="w-full"
               @update:valid-model-value="onRangeComplete"
             />
           </div>
