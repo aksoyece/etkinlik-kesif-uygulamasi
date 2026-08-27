@@ -96,6 +96,27 @@ describe('etkinlik yardımcıları', () => {
     )).toBe('https://s1.ticketm.net/dam/a/8f1/c3ba26f9-47ce-4ec0-bd0e-645a71e278f1_SOURCE')
   })
 
+  it('SOURCE birincil seçilmez; yalnızca 16:9 yoksa son çare SOURCE kalır', () => {
+    const mapped = mapTicketmasterEvent({
+      ...sampleEvent,
+      images: [
+        { url: 'https://s1.ticketm.net/dam/a/abc/event_SOURCE', width: 2420, height: 1350, fallback: false },
+        { url: 'https://s1.ticketm.net/dam/a/abc/tiny_RECOMENDATION_16_9.jpg', ratio: '16_9', width: 305, height: 171, fallback: false }
+      ]
+    })
+    expect(mapped.image).toBe('https://s1.ticketm.net/dam/a/abc/event_SOURCE')
+  })
+
+  it('gerçek 16:9 varsa SOURCE kullanılmaz', () => {
+    const images = [
+      { url: 'https://s1.ticketm.net/dam/a/abc/event_SOURCE', width: 2420, height: 1350, fallback: false },
+      { url: 'https://s1.ticketm.net/dam/a/abc/cover_RETINA_LANDSCAPE_16_9.jpg', ratio: '16_9', width: 1024, height: 576, fallback: false }
+    ]
+    expect(getBestEventImage(images)).toBe(
+      'https://s1.ticketm.net/dam/a/abc/cover_TABLET_LANDSCAPE_LARGE_16_9.jpg'
+    )
+  })
+
   it('event afişi yoksa attraction landscape kapağına düşer', () => {
     const mapped = mapTicketmasterEvent({
       ...sampleEvent,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EventSummary } from '#shared/types/event'
+import { isSourceTicketmasterImage } from '#shared/utils/event'
 import { translateCategory } from '#shared/utils/labels'
 
 const props = defineProps<{
@@ -7,6 +8,16 @@ const props = defineProps<{
 }>()
 
 const categoryLabel = computed(() => translateCategory(props.event.category))
+const imageBroken = ref(false)
+
+const coverSrc = computed(() =>
+  imageBroken.value ? '/placeholder-event.svg' : (props.event.image || '/placeholder-event.svg')
+)
+const coverFitClass = computed(() =>
+  isSourceTicketmasterImage(props.event.image)
+    ? 'object-contain bg-neutral-950'
+    : 'object-cover object-center'
+)
 
 const categoryBadgeClass = computed(() => {
   const cat = (props.event.category || '').toUpperCase()
@@ -24,6 +35,10 @@ function warmDetail() {
   seedFromSummary(props.event)
   prefetchEventDetail(props.event.id)
 }
+
+function onCoverError() {
+  imageBroken.value = true
+}
 </script>
 
 <template>
@@ -33,13 +48,15 @@ function warmDetail() {
     class="ticket-stub group flex-col h-full overflow-hidden"
     @pointerdown="warmDetail"
   >
-    <div class="relative aspect-[16/10] w-full overflow-hidden flex-none">
+    <div class="relative aspect-[16/10] w-full overflow-hidden flex-none bg-neutral-900">
       <img
-        :src="event.image || '/placeholder-event.svg'"
+        :src="coverSrc"
         :alt="event.name"
-        class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+        class="h-full w-full transition-transform duration-500 group-hover:scale-105"
+        :class="coverFitClass"
         loading="lazy"
         decoding="async"
+        @error="onCoverError"
       >
       <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
       <span

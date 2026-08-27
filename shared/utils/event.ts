@@ -122,10 +122,22 @@ function imageArea(image: TicketmasterImage): number {
   return w * w
 }
 
+/** Kart kapağında birincil seçimde SOURCE/BLOCK kullanma — object-cover ile aşırı zoom üretir */
+function isBadCardSource(url?: string): boolean {
+  if (!url) {
+    return true
+  }
+  return /_(SOURCE|BLOCK)(?:\.(?:jpe?g|png|webp))?$/i.test(url)
+}
+
+export function isSourceTicketmasterImage(url?: string | null): boolean {
+  return Boolean(url && /_SOURCE(?:\.(?:jpe?g|png|webp))?$/i.test(url))
+}
+
 /**
  * images[0] kullanılmaz.
  * 16:9 / landscape tercih → genişlik×yükseklik sırala → ≥1024 tercih → yoksa ≥640 → yoksa undefined.
- * Düşük çözünürlük büyütülmez.
+ * SOURCE/BLOCK birincil havuzda yok; düşük çözünürlük büyütülmez.
  */
 export function pickBestCoverFromImages(
   images?: TicketmasterImage[],
@@ -135,19 +147,31 @@ export function pickBestCoverFromImages(
     return undefined
   }
 
-  const usable = images.filter(image => Boolean(image.url) && !image.fallback)
-  const pool = usable.length ? usable : images.filter(image => Boolean(image.url))
+  const withUrl = images.filter(image => Boolean(image.url) && !image.fallback && !isBadCardSource(image.url))
+  const pool = withUrl.length
+    ? withUrl
+    : images.filter(image => Boolean(image.url) && !isBadCardSource(image.url))
+
   if (!pool.length) {
     return undefined
   }
 
   const wideEnough = pool.filter(image => (image.width ?? 0) >= minWidth)
-  if (!wideEnough.length) {
+  // width metadata yoksa URL’de 16_9 / LANDSCAPE olanları kabul et
+  const usable = wideEnough.length
+    ? wideEnough
+    : pool.filter(image =>
+        (image.width ?? 0) === 0
+        && isLandscapeCover(image)
+        && /16_9|LANDSCAPE|RETINA|TABLET/i.test(image.url || '')
+      )
+
+  if (!usable.length) {
     return undefined
   }
 
-  const preferred = wideEnough.filter(image => (image.width ?? 0) >= PREFERRED_EVENT_IMAGE_WIDTH)
-  const candidates = preferred.length ? preferred : wideEnough
+  const preferred = usable.filter(image => (image.width ?? 0) >= PREFERRED_EVENT_IMAGE_WIDTH)
+  const candidates = preferred.length ? preferred : usable
 
   const landscape = candidates.filter(isLandscapeCover)
   const ranked = [...(landscape.length ? landscape : candidates)].sort(
@@ -159,7 +183,7 @@ export function pickBestCoverFromImages(
     return undefined
   }
 
-  return toHighResTicketmasterUrl(best.url, { width: best.width }) || toHttps(best.url)
+  return toHighResTicketmasterUrl(best.url, { width: best.width || PREFERRED_EVENT_IMAGE_WIDTH }) || toHttps(best.url)
 }
 
 /**
@@ -170,8 +194,8 @@ export function getBestEventImage(images?: TicketmasterImage[]): string {
 }
 
 /**
- * Event afişi → attraction yüksek çözünürlüklü landscape → placeholder.
- * Düşük çözünürlüklü afişi kartta büyütmez.
+ * 16:9 event afişi → attraction 16:9 → (son çare) SOURCE olduğu gibi → placeholder.
+ * SOURCE→TABLET promote edilmez: Merlin CDN çoğu LARGE varyantında 403 döner.
  */
 export function resolveEventCoverImage(event: {
   images?: TicketmasterImage[]
@@ -187,6 +211,14 @@ export function resolveEventCoverImage(event: {
     if (fromAttraction) {
       return fromAttraction
     }
+  }
+
+  const sourceOnly = (event.images ?? [])
+    .filter(image => image.url && !image.fallback && isSourceTicketmasterImage(image.url))
+    .sort((a, b) => imageArea(b) - imageArea(a))[0]
+
+  if (sourceOnly?.url) {
+    return toHttps(sourceOnly.url) || EVENT_IMAGE_PLACEHOLDER
   }
 
   return EVENT_IMAGE_PLACEHOLDER
