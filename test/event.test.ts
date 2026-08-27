@@ -4,6 +4,7 @@ import {
   formatEventDate,
   getBestEventImage,
   isFavoriteEvent,
+  isSourceTicketmasterImage,
   mapTicketmasterEvent,
   toFavoriteEvent,
   toggleFavoriteEvent,
@@ -53,10 +54,16 @@ describe('etkinlik yardımcıları', () => {
     expect(getBestEventImage(sampleEvent.images)).toBe('https://cdn.example/cover.jpg')
   })
 
-  it('Universe scale_crop URL’sini yüksek çözünürlüğe çıkarır', () => {
+  it('Universe scale_crop kırpmasını kaldırır (kare logo bozulmasın)', () => {
     const low = 'https://images.universe.com/abc/-/format/jpeg/-/scale_crop/1024x683/center/-/progressive/yes/'
-    expect(toOptimizedImageUrl(low)).toContain('scale_crop/2048x1365')
-    expect(toOptimizedImageUrl(low, { forHero: true })).toContain('scale_crop/2400x1600')
+    expect(toOptimizedImageUrl(low)).toBe('https://images.universe.com/abc/-/format/jpeg/-/progressive/yes/')
+    expect(toHighResTicketmasterUrl(low)).toBe('https://images.universe.com/abc/-/format/jpeg/-/progressive/yes/')
+  })
+
+  it('images.universe.com SOURCE gibi algılanır', () => {
+    expect(isSourceTicketmasterImage('https://images.universe.com/abc/-/format/jpeg/')).toBe(true)
+    expect(isSourceTicketmasterImage('https://s1.ticketm.net/dam/a/x_SOURCE')).toBe(true)
+    expect(isSourceTicketmasterImage('https://s1.ticketm.net/dam/a/x_RETINA_LANDSCAPE_16_9.jpg')).toBe(false)
   })
 
   it('Ticketmaster kapak görselini (16:9, fallback olmayan) tercih eder', () => {

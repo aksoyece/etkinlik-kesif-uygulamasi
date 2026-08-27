@@ -71,13 +71,9 @@ export function toHttps(url?: string): string | undefined {
   return url.replace(/^http:/, 'https:')
 }
 
-/** Kart / hero için Universe (Uploadcare) kırpma boyutu */
-const UNIVERSE_CARD_SIZE = '2048x1365'
-const UNIVERSE_HERO_SIZE = '2400x1600'
-
 /**
- * Universe / Uploadcare scale_crop URL’lerini daha yüksek çözünürlüğe çeker.
- * Ticketmaster için mevcut LARGE yükseltmesini uygular.
+ * Ticketmaster / Universe URL’lerini kart ve hero için optimize eder.
+ * Universe scale_crop kare logoları bozduğu için kırpma kaldırılır.
  */
 export function toOptimizedImageUrl(
   url?: string,
@@ -86,12 +82,6 @@ export function toOptimizedImageUrl(
   const secure = toHttps(url)
   if (!secure) {
     return undefined
-  }
-
-  // images.universe.com / ucarecdn: -/scale_crop/WxH/
-  if (/scale_crop\/\d+x\d+/i.test(secure)) {
-    const size = options?.forHero ? UNIVERSE_HERO_SIZE : UNIVERSE_CARD_SIZE
-    return secure.replace(/scale_crop\/\d+x\d+/i, `scale_crop/${size}`)
   }
 
   return toHighResTicketmasterUrl(secure, { width: options?.width })
@@ -105,6 +95,11 @@ export function toHighResTicketmasterUrl(url?: string, meta?: { width?: number }
   const secure = toHttps(url)
   if (!secure) {
     return undefined
+  }
+
+  // Universe: scale_crop kare logoları zorla sündürüp bozar → orijinal URL
+  if (/images\.universe\.com/i.test(secure)) {
+    return secure.replace(/\/?-\/scale_crop\/[^/]+\/[^/]+/i, '')
   }
 
   if (!/ticketm\.net/i.test(secure)) {
@@ -172,7 +167,14 @@ function isBadCardSource(url?: string): boolean {
 }
 
 export function isSourceTicketmasterImage(url?: string | null): boolean {
-  return Boolean(url && /_SOURCE(?:\.(?:jpe?g|png|webp))?$/i.test(url))
+  if (!url) {
+    return false
+  }
+  // Universe scale_crop kare logoları — kartta SOURCE gibi blur+contain
+  if (/images\.universe\.com/i.test(url)) {
+    return true
+  }
+  return /_SOURCE(?:\.(?:jpe?g|png|webp))?$/i.test(url)
 }
 
 /**

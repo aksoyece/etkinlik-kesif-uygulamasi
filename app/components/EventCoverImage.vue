@@ -9,7 +9,7 @@ import {
 const props = withDefaults(defineProps<{
   src?: string | null
   alt: string
-  /** card: soft → blur + contain; hero: SOURCE → placeholder, diğerleri yüksek çözünürlük */
+  /** card/hero: Universe & SOURCE → blur + contain; hero’da yalnızca TM _SOURCE → placeholder */
   mode?: 'card' | 'hero'
   eager?: boolean
 }>(), {
@@ -19,14 +19,15 @@ const props = withDefaults(defineProps<{
 
 const broken = ref(false)
 
+const isUniverse = computed(() => /images\.universe\.com/i.test(props.src || ''))
 const isSource = computed(() => isSourceTicketmasterImage(props.src))
 
-/** Detay hero’da SOURCE büyük alana yetmez → Evently placeholder */
+/** Detay hero’da Ticketmaster _SOURCE büyük alana yetmez → placeholder (Universe blur+contain alır) */
 const showPlaceholder = computed(() =>
   broken.value
   || !props.src
   || props.src === EVENT_IMAGE_PLACEHOLDER
-  || (props.mode === 'hero' && isSource.value)
+  || (props.mode === 'hero' && isSource.value && !isUniverse.value)
 )
 
 const optimizedSrc = computed(() => {
@@ -38,10 +39,9 @@ const optimizedSrc = computed(() => {
     || EVENT_IMAGE_PLACEHOLDER
 })
 
-/** Kartta optimize sonrası hâlâ yumuşaksa blur çerçeve */
+/** Universe / SOURCE / soft: bulanık arka plan + contain */
 const useBlurFrame = computed(() =>
-  props.mode === 'card'
-  && !showPlaceholder.value
+  !showPlaceholder.value
   && (isSource.value || isSoftCoverImage(optimizedSrc.value))
 )
 
@@ -56,7 +56,7 @@ watch(() => props.src, () => {
 
 <template>
   <div class="absolute inset-0 overflow-hidden bg-neutral-900">
-    <!-- Soft / SOURCE kart: koyu bulanık dolgu + net contain -->
+    <!-- Soft / Universe / SOURCE: koyu bulanık dolgu + net contain -->
     <template v-if="useBlurFrame">
       <img
         :src="optimizedSrc"
@@ -77,7 +77,7 @@ watch(() => props.src, () => {
       >
     </template>
 
-    <!-- Yüksek çözünürlüklü 16:9 / Universe 2K+: cover -->
+    <!-- Yüksek çözünürlüklü 16:9: cover -->
     <img
       v-else
       :src="optimizedSrc"
