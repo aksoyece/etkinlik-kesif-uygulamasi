@@ -28,7 +28,7 @@ export default defineCachedEventHandler(async (event): Promise<VenueSummary> => 
   // Mekan endpoint’i de async çeviriyle güçlendirilir (sözlük mapVenue’da zaten uygulandı)
   return await localizeVenueCopy(venue)
 }, {
-  maxAge: 60 * 30,
+  maxAge: 60 * 60,
   swr: true,
-  getKey: event => `venue:v5:tr:${getRouterParam(event, 'id') || ''}`
+  getKey: event => `venue:v6:tr:${getRouterParam(event, 'id') || ''}`
 })

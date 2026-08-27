@@ -6,21 +6,45 @@ import {
   looksMostlyEnglish
 } from '#shared/utils/localize'
 
-/** Aynı Ticketmaster metni tekrar çevrilmesin */
+/** Yalnızca başarılı Türkçe çeviriler — İngilizce fallback kalıcı cache’lenmez */
 const translationCache = new Map<string, string>()
 
-const TRANSLATE_TIMEOUT_MS = 4500
+const TRANSLATE_TIMEOUT_MS = 14000
 
 function cacheKey(text: string) {
-  return `tr:v2:${text}`
+  return `tr:v3:${text}`
 }
 
 function safeFallback(text: string): string {
-  // Karışık dil yok — yalnızca yerel kalıp + gün/saat düzeltmesi
   return applyLocaleFixes(applyKnownPhrases(text))
 }
 
-function chunkText(text: string, max = 450): string[] {
+function hasTurkishSignal(text: string): boolean {
+  if (/[ğüşıöçĞÜŞİÖÇ]/.test(text)) {
+    return true
+  }
+  return /\b(ve|bir|için|ile|bu|olan|olarak|müze|etkinlik|bilet|lütfen|giriş|otopark|saat|gün|yasaktır|açılır|kişi|hane|deneyim|keşfedin|dünya|arkadaş|gerçeklik)\b/i.test(text)
+}
+
+function isAcceptableTranslation(original: string, translated: string): boolean {
+  if (!translated || translated === original) {
+    return false
+  }
+  if (translated.trim().toLowerCase() === original.trim().toLowerCase()) {
+    return false
+  }
+  // Proper noun’lu iyi çeviriler looksMostlyEnglish’e takılmasın
+  if (hasTurkishSignal(translated)) {
+    return true
+  }
+  // Kısa teknik satırlar
+  if (translated.length < 40 && translated !== original) {
+    return true
+  }
+  return false
+}
+
+function chunkText(text: string, max = 900): string[] {
   if (text.length <= max) {
     return [text]
   }
@@ -44,23 +68,7 @@ function chunkText(text: string, max = 450): string[] {
   return chunks
 }
 
-function splitForTranslation(text: string): string[] {
-  const bulletParts = text
-    .split(/(?=\*\s)|(?<=\.)\s+(?=[A-Z])/)
-    .map(part => part.trim())
-    .filter(Boolean)
-
-  if (bulletParts.length > 1) {
-    return bulletParts.flatMap(part => chunkText(part, 450))
-  }
-
-  return chunkText(text, 450)
-}
-
-/**
- * Tek parça çeviri. Başarısızsa null — kısmi TR+EN birleştirilmez.
- */
-async function translateChunkRaw(text: string): Promise<string | null> {
+async function translateViaGoogle(text: string): Promise<string | null> {
   try {
     const raw = await $fetch<unknown>('https://translate.googleapis.com/translate_a/single', {
       query: {
@@ -70,7 +78,7 @@ async function translateChunkRaw(text: string): Promise<string | null> {
         dt: 't',
         q: text
       },
-      timeout: 8000
+      timeout: 10000
     })
 
     if (Array.isArray(raw) && Array.isArray(raw[0])) {
@@ -78,15 +86,17 @@ async function translateChunkRaw(text: string): Promise<string | null> {
         .map((row: unknown) => (Array.isArray(row) ? String(row[0] ?? '') : ''))
         .join('')
         .trim()
-
-      if (translated && translated !== text) {
+      if (isAcceptableTranslation(text, translated)) {
         return translated
       }
     }
   } catch {
-    // MyMemory
+    // next provider
   }
+  return null
+}
 
+async function translateViaMyMemory(text: string): Promise<string | null> {
   try {
     const result = await $fetch<{
       responseData?: { translatedText?: string }
@@ -96,7 +106,7 @@ async function translateChunkRaw(text: string): Promise<string | null> {
         q: text,
         langpair: 'en|tr'
       },
-      timeout: 8000
+      timeout: 10000
     })
 
     const translated = result.responseData?.translatedText?.trim()
@@ -104,15 +114,54 @@ async function translateChunkRaw(text: string): Promise<string | null> {
       translated
       && result.responseStatus === 200
       && !/MYMEMORY WARNING/i.test(translated)
-      && translated !== text
+      && isAcceptableTranslation(text, translated)
     ) {
       return translated
     }
   } catch {
-    // fail
+    // next
   }
-
   return null
+}
+
+async function translateViaLibre(text: string): Promise<string | null> {
+  const endpoints = [
+    'https://libretranslate.com/translate',
+    'https://translate.argosopentech.com/translate'
+  ]
+
+  for (const endpoint of endpoints) {
+    try {
+      const result = await $fetch<{ translatedText?: string }>(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          q: text,
+          source: 'en',
+          target: 'tr',
+          format: 'text',
+          api_key: ''
+        },
+        timeout: 12000
+      })
+      const translated = result.translatedText?.trim()
+      if (translated && isAcceptableTranslation(text, translated)) {
+        return translated
+      }
+    } catch {
+      // try next endpoint
+    }
+  }
+  return null
+}
+
+/** Sağlayıcıları sırayla dene — paralel istek 429 üretir */
+async function translateChunkRaw(text: string): Promise<string | null> {
+  return (
+    await translateViaGoogle(text)
+    ?? await translateViaMyMemory(text)
+    ?? await translateViaLibre(text)
+  )
 }
 
 async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
@@ -133,8 +182,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
 
 /**
  * Kullanıcıya görünen prose metinleri Türkçeye çevirir.
- * Proper noun / URL / teknik değerler için kullanılmaz.
- * Başarısızlıkta: tamamen güvenli fallback (karışık dil yok).
+ * Başarılı sonuçlar cache’lenir; İngilizce fallback cache’lenmez (sonra tekrar dener).
  */
 export async function translateToTurkish(
   text?: string | null,
@@ -149,7 +197,6 @@ export async function translateToTurkish(
     return text
   }
 
-  // Zaten Türkçe / kısa teknik
   if (!looksMostlyEnglish(trimmed)) {
     return applyLocaleFixes(trimmed)
   }
@@ -160,35 +207,38 @@ export async function translateToTurkish(
     return cached
   }
 
-  const run = async (): Promise<string> => {
-    const parts = splitForTranslation(trimmed)
-    const translatedParts = await Promise.all(parts.map(part => translateChunkRaw(part)))
+  const run = async (): Promise<string | null> => {
+    const parts = chunkText(trimmed, 400)
+    const translatedParts: string[] = []
 
-    // Herhangi bir parça çevrilemediyse tüm metin için güvenli fallback
-    if (translatedParts.some(part => part == null)) {
-      return safeFallback(trimmed)
+    // Sıralı — rate limit’e takılmamak için
+    for (const part of parts) {
+      const translated = await translateChunkRaw(part)
+      if (!translated) {
+        return null
+      }
+      translatedParts.push(translated)
     }
 
-    const joined = translatedParts
-      .map(part => part as string)
-      .join(' ')
-      .replace(/[ \t]{2,}/g, ' ')
-      .trim()
-
+    const joined = translatedParts.join(' ').replace(/[ \t]{2,}/g, ' ').trim()
     const fixed = applyLocaleFixes(joined)
 
-    // Makine çıktısı hâlâ ağır İngilizceyse karışık kabul etme
-    if (looksMostlyEnglish(fixed) && fixed.length > 48) {
-      return safeFallback(trimmed)
+    if (!isAcceptableTranslation(trimmed, fixed)) {
+      return null
     }
 
     return fixed
   }
 
   const result = await withTimeout(run(), TRANSLATE_TIMEOUT_MS)
-  const finalText = result ?? safeFallback(trimmed)
-  translationCache.set(key, finalText)
-  return finalText
+
+  if (result) {
+    translationCache.set(key, result)
+    return result
+  }
+
+  // Cache’leme — bir sonraki istekte tekrar dene
+  return safeFallback(trimmed)
 }
 
 export async function localizeVenueCopy<T extends {
@@ -201,6 +251,7 @@ export async function localizeVenueCopy<T extends {
   boxOffice?: string
   boxOfficePhone?: string
 }>(venue: T): Promise<T> {
+  // Paralel alan çevirisi — her alan kendi içinde sıralı provider kullanır
   const [
     parkingDetail,
     generalRule,
@@ -217,7 +268,6 @@ export async function localizeVenueCopy<T extends {
 
   return {
     ...venue,
-    // Sokak adresi çevrilmez — yalnızca ülke etiketi
     address: localizeAddressLine(venue.address) || venue.address,
     country: localizeCountryName(venue.country) || venue.country,
     parkingDetail,
@@ -225,7 +275,6 @@ export async function localizeVenueCopy<T extends {
     childRule,
     accessibilityDetail,
     boxOffice,
-    // Telefon olduğu gibi
     boxOfficePhone: venue.boxOfficePhone
   }
 }
@@ -249,17 +298,15 @@ export async function localizeEventCopy<T extends {
   }
   attractions?: Array<{ name: string, url?: string }>
 }>(detail: T): Promise<T> {
-  const [info, pleaseNote, venueDetail] = await Promise.all([
-    translateToTurkish(detail.info),
-    translateToTurkish(detail.pleaseNote),
-    detail.venueDetail
-      ? localizeVenueCopy(detail.venueDetail)
-      : Promise.resolve(detail.venueDetail)
-  ])
+  // Önce ana bilgi metinleri (kullanıcı “Etkinlik bilgisi” görür), sonra mekan
+  const info = await translateToTurkish(detail.info)
+  const pleaseNote = await translateToTurkish(detail.pleaseNote)
+  const venueDetail = detail.venueDetail
+    ? await localizeVenueCopy(detail.venueDetail)
+    : detail.venueDetail
 
   return {
     ...detail,
-    // name / venue / attraction adları / URL’ler dokunulmaz
     info,
     pleaseNote,
     country: localizeCountryName(detail.country) || detail.country,

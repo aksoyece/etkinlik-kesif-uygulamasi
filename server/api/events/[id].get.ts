@@ -19,7 +19,7 @@ export default defineCachedEventHandler(async (event): Promise<EventDetail> => {
   const detail = mapTicketmasterEventDetail(data)
   return await localizeEventCopy(detail)
 }, {
-  maxAge: 60 * 30,
+  maxAge: 60 * 60,
   swr: true,
-  getKey: event => `event:v14:tr:${getRouterParam(event, 'id') || ''}`
+  getKey: event => `event:v15:tr:${getRouterParam(event, 'id') || ''}`
 })
