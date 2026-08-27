@@ -1,5 +1,4 @@
 import {
-  applyKnownPhrases,
   applyLocaleFixes,
   localizeAddressLine,
   localizeCountryName,
@@ -12,11 +11,7 @@ const translationCache = new Map<string, string>()
 const TRANSLATE_TIMEOUT_MS = 2800
 
 function cacheKey(text: string) {
-  return `tr:v3:${text}`
-}
-
-function safeFallback(text: string): string {
-  return applyLocaleFixes(applyKnownPhrases(text))
+  return `tr:v4:${text}`
 }
 
 function hasTurkishSignal(text: string): boolean {
@@ -37,6 +32,10 @@ function isAcceptableTranslation(original: string, translated: string): boolean 
   if (hasTurkishSignal(translated)) {
     return true
   }
+  // Makine çevirisi Latin harfli Türkçe üretebilir
+  if (!looksMostlyEnglish(translated) && translated.length > 15) {
+    return true
+  }
   // Kısa teknik satırlar
   if (translated.length < 40 && translated !== original) {
     return true
@@ -44,19 +43,25 @@ function isAcceptableTranslation(original: string, translated: string): boolean 
   return false
 }
 
-function chunkText(text: string, max = 900): string[] {
+function chunkText(text: string, max = 350): string[] {
   if (text.length <= max) {
     return [text]
   }
 
   const chunks: string[] = []
-  let remaining = text
+  let remaining = text.trim()
   while (remaining.length > max) {
-    let splitAt = remaining.lastIndexOf('. ', max)
-    if (splitAt < max * 0.4) {
+    let splitAt = remaining.lastIndexOf('\n\n', max)
+    if (splitAt < max * 0.35) {
+      splitAt = remaining.lastIndexOf('\n', max)
+    }
+    if (splitAt < max * 0.35) {
+      splitAt = remaining.lastIndexOf('. ', max)
+    }
+    if (splitAt < max * 0.35) {
       splitAt = remaining.lastIndexOf(' ', max)
     }
-    if (splitAt < max * 0.3) {
+    if (splitAt < max * 0.25) {
       splitAt = max
     }
     chunks.push(remaining.slice(0, splitAt + 1).trim())
@@ -150,7 +155,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
 
 /**
  * Kullanıcıya görünen prose metinleri Türkçeye çevirir.
- * Başarılı sonuçlar cache’lenir; İngilizce fallback cache’lenmez (sonra tekrar dener).
+ * Başarılı sonuçlar cache’lenir; başarısız/timeout’ta İngilizce DÖNMEZ (undefined).
  */
 export async function translateToTurkish(
   text?: string | null,
@@ -175,11 +180,13 @@ export async function translateToTurkish(
     return cached
   }
 
+  const parts = chunkText(trimmed, 350)
+  // Uzun parkingDetail vb. için chunk başına ek süre
+  const timeoutMs = Math.min(16000, TRANSLATE_TIMEOUT_MS + Math.max(0, parts.length - 1) * 2200)
+
   const run = async (): Promise<string | null> => {
-    const parts = chunkText(trimmed, 400)
     const translatedParts: string[] = []
 
-    // Sıralı — rate limit’e takılmamak için
     for (const part of parts) {
       const translated = await translateChunkRaw(part)
       if (!translated) {
@@ -198,15 +205,15 @@ export async function translateToTurkish(
     return fixed
   }
 
-  const result = await withTimeout(run(), TRANSLATE_TIMEOUT_MS)
+  const result = await withTimeout(run(), timeoutMs)
 
   if (result) {
     translationCache.set(key, result)
     return result
   }
 
-  // Cache’leme — bir sonraki istekte tekrar dene
-  return safeFallback(trimmed)
+  // İngilizce fallback yok — UI skeleton / failedProse yolu kullanır
+  return undefined
 }
 
 type VenueLocalizeFields = {
@@ -228,6 +235,26 @@ type VenueLocalizeFields = {
   id?: string
 }
 
+type ProseFlags = {
+  info?: boolean
+  pleaseNote?: boolean
+  parkingDetail?: boolean
+  generalRule?: boolean
+  childRule?: boolean
+  accessibilityDetail?: boolean
+  boxOffice?: boolean
+}
+
+type ProseBag = {
+  info?: string
+  pleaseNote?: string
+  parkingDetail?: string
+  generalRule?: string
+  childRule?: string
+  accessibilityDetail?: string
+  boxOffice?: string
+}
+
 /** Adres / ülke / URL / telefon — anında; prose metinleri kabukta yok */
 export function localizeVenueShell<T extends VenueLocalizeFields>(venue: T): T {
   return {
@@ -243,8 +270,38 @@ export function localizeVenueShell<T extends VenueLocalizeFields>(venue: T): T {
   }
 }
 
-export async function localizeVenueCopy<T extends VenueLocalizeFields>(venue: T): Promise<T> {
+type VenueLocalizeResult<T> = {
+  venue: T
+  failed: ProseFlags
+  raw: ProseBag
+}
+
+/**
+ * parkingDetail / accessibilityDetail / generalRule / childRule / boxOffice —
+ * yalnızca başarılı Türkçe yazılır; başarısızlar failed+raw’da kalır (ham EN alanlara yazılmaz).
+ */
+export async function localizeVenueCopy<T extends VenueLocalizeFields>(
+  venue: T
+): Promise<VenueLocalizeResult<T>> {
   const base = localizeVenueShell(venue)
+  const failed: ProseFlags = {}
+  const raw: ProseBag = {}
+
+  const take = async (
+    key: keyof ProseFlags,
+    original?: string
+  ): Promise<string | undefined> => {
+    if (!original?.trim()) {
+      return undefined
+    }
+    const translated = await translateToTurkish(original)
+    if (translated) {
+      return translated
+    }
+    failed[key] = true
+    raw[key] = original
+    return undefined
+  }
 
   const hasProse = Boolean(
     venue.parkingDetail
@@ -255,7 +312,7 @@ export async function localizeVenueCopy<T extends VenueLocalizeFields>(venue: T)
   )
 
   if (!hasProse) {
-    return base
+    return { venue: base, failed, raw }
   }
 
   const [
@@ -265,20 +322,24 @@ export async function localizeVenueCopy<T extends VenueLocalizeFields>(venue: T)
     accessibilityDetail,
     boxOffice
   ] = await Promise.all([
-    translateToTurkish(venue.parkingDetail),
-    translateToTurkish(venue.generalRule),
-    translateToTurkish(venue.childRule),
-    translateToTurkish(venue.accessibilityDetail),
-    translateToTurkish(venue.boxOffice)
+    take('parkingDetail', venue.parkingDetail),
+    take('generalRule', venue.generalRule),
+    take('childRule', venue.childRule),
+    take('accessibilityDetail', venue.accessibilityDetail),
+    take('boxOffice', venue.boxOffice)
   ])
 
   return {
-    ...base,
-    parkingDetail,
-    generalRule,
-    childRule,
-    accessibilityDetail,
-    boxOffice
+    venue: {
+      ...base,
+      parkingDetail,
+      generalRule,
+      childRule,
+      accessibilityDetail,
+      boxOffice
+    },
+    failed,
+    raw
   }
 }
 
@@ -290,29 +351,14 @@ type EventLocalizeFields = {
   venue?: string
   venueDetail?: VenueLocalizeFields
   attractions?: Array<{ name: string, url?: string }>
-  pendingProse?: {
-    info?: boolean
-    pleaseNote?: boolean
-    parkingDetail?: boolean
-    generalRule?: boolean
-    childRule?: boolean
-    accessibilityDetail?: boolean
-    boxOffice?: boolean
-  }
-  rawProse?: {
-    info?: string
-    pleaseNote?: string
-    parkingDetail?: string
-    generalRule?: string
-    childRule?: string
-    accessibilityDetail?: string
-    boxOffice?: string
-  }
+  pendingProse?: ProseFlags
+  failedProse?: ProseFlags
+  rawProse?: ProseBag
 }
 
 function buildPendingAndRawProse<T extends EventLocalizeFields>(detail: T) {
   const venue = detail.venueDetail
-  const pendingProse = {
+  const pendingProse: ProseFlags = {
     info: Boolean(detail.info?.trim()),
     pleaseNote: Boolean(detail.pleaseNote?.trim()),
     parkingDetail: Boolean(venue?.parkingDetail?.trim()),
@@ -337,7 +383,7 @@ function buildPendingAndRawProse<T extends EventLocalizeFields>(detail: T) {
       childRule: venue?.childRule,
       accessibilityDetail: venue?.accessibilityDetail,
       boxOffice: venue?.boxOffice
-    }
+    } satisfies ProseBag
   }
 }
 
@@ -354,27 +400,45 @@ export function localizeEventShell<T extends EventLocalizeFields>(detail: T): T 
       ? localizeVenueShell(detail.venueDetail)
       : detail.venueDetail,
     pendingProse,
+    failedProse: undefined,
     rawProse
   }
 }
 
 /** Prose makine çevirisi — ayrı istek / locale=1 */
 export async function localizeEventCopy<T extends EventLocalizeFields>(detail: T): Promise<T> {
-  const [info, pleaseNote, venueDetail] = await Promise.all([
+  const venueSource = detail.venueDetail
+
+  const [info, pleaseNote, venueResult] = await Promise.all([
     translateToTurkish(detail.info),
     translateToTurkish(detail.pleaseNote),
-    detail.venueDetail
-      ? localizeVenueCopy(detail.venueDetail)
-      : Promise.resolve(detail.venueDetail)
+    venueSource
+      ? localizeVenueCopy(venueSource)
+      : Promise.resolve(undefined)
   ])
+
+  const failedProse: ProseFlags = { ...(venueResult?.failed || {}) }
+  const rawProse: ProseBag = { ...(venueResult?.raw || {}) }
+
+  if (detail.info?.trim() && !info) {
+    failedProse.info = true
+    rawProse.info = detail.info
+  }
+  if (detail.pleaseNote?.trim() && !pleaseNote) {
+    failedProse.pleaseNote = true
+    rawProse.pleaseNote = detail.pleaseNote
+  }
+
+  const hasFailed = Object.values(failedProse).some(Boolean)
 
   return {
     ...detail,
     info,
     pleaseNote,
     country: localizeCountryName(detail.country) || detail.country,
-    venueDetail,
+    venueDetail: venueResult?.venue ?? detail.venueDetail,
     pendingProse: undefined,
-    rawProse: undefined
+    failedProse: hasFailed ? failedProse : undefined,
+    rawProse: hasFailed ? rawProse : undefined
   }
 }

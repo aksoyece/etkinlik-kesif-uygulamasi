@@ -224,7 +224,9 @@ export interface EventDetail extends EventSummary {
    * true iken UI İngilizce render etmez — skeleton gösterir.
    */
   pendingProse?: EventProsePending
-  /** Yalnızca çeviri isteği tamamen başarısız olursa fallback — UI doğrudan kullanmaz */
+  /** Çeviri denendi ama Türkçe üretilemedi — UI rawProse’u son çare gösterir */
+  failedProse?: EventProsePending
+  /** Ham İngilizce prose — yalnızca failedProse / ağ hatası fallback; pending iken render edilmez */
   rawProse?: EventRawProse
 }
 

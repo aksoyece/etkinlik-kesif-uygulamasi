@@ -48,19 +48,54 @@ const pageUrl = computed(() => `${requestUrl.origin}${route.fullPath}`)
 const categoryLabel = computed(() => translateCategory(event.value?.category))
 const genreLabel = computed(() => translateGenre(event.value?.genre))
 const statusText = computed(() => translateStatus(event.value?.status))
-/** Çevrilmiş prose — pending iken İngilizce gösterilmez */
-const infoText = computed(() => event.value?.info || undefined)
-const pleaseNoteText = computed(() => event.value?.pleaseNote || undefined)
-const venueBoxOffice = computed(() => venueInfo.value?.boxOffice || undefined)
+const pendingProse = computed(() => event.value?.pendingProse)
+/** Çevrilmiş prose — pending iken İngilizce yok; failed ise raw son çare */
+const failedProse = computed(() => event.value?.failedProse)
+const rawProse = computed(() => event.value?.rawProse)
+
+function resolveEventProse(
+  key: 'info' | 'pleaseNote',
+  translated: string | undefined
+): string | undefined {
+  if (localePending.value && pendingProse.value?.[key]) {
+    return undefined
+  }
+  if (translated) {
+    return translated
+  }
+  if (failedProse.value?.[key]) {
+    return rawProse.value?.[key]
+  }
+  return undefined
+}
+
+function resolveVenueProse(
+  key: 'parkingDetail' | 'generalRule' | 'childRule' | 'accessibilityDetail' | 'boxOffice',
+  translated: string | undefined
+): string | undefined {
+  if (localePending.value && pendingProse.value?.[key]) {
+    return undefined
+  }
+  if (translated) {
+    return translated
+  }
+  if (failedProse.value?.[key]) {
+    return rawProse.value?.[key]
+  }
+  return undefined
+}
+
+const infoText = computed(() => resolveEventProse('info', event.value?.info))
+const pleaseNoteText = computed(() => resolveEventProse('pleaseNote', event.value?.pleaseNote))
+const venueBoxOffice = computed(() => resolveVenueProse('boxOffice', venueInfo.value?.boxOffice))
 const venueBoxOfficePhone = computed(() => venueInfo.value?.boxOfficePhone || undefined)
-const venueParking = computed(() => venueInfo.value?.parkingDetail || undefined)
-const venueRules = computed(() => venueInfo.value?.generalRule || undefined)
-const venueChildRule = computed(() => venueInfo.value?.childRule || undefined)
-const venueAccessibility = computed(() => venueInfo.value?.accessibilityDetail || undefined)
+const venueParking = computed(() => resolveVenueProse('parkingDetail', venueInfo.value?.parkingDetail))
+const venueRules = computed(() => resolveVenueProse('generalRule', venueInfo.value?.generalRule))
+const venueChildRule = computed(() => resolveVenueProse('childRule', venueInfo.value?.childRule))
+const venueAccessibility = computed(() => resolveVenueProse('accessibilityDetail', venueInfo.value?.accessibilityDetail))
 const venueAddress = computed(() => venueInfo.value?.address)
 const canBuyTicket = computed(() => isValidTicketUrl(event.value?.ticketUrl))
 
-const pendingProse = computed(() => event.value?.pendingProse)
 const showInfoSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.info))
 const showPleaseNoteSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.pleaseNote))
 const showBoxOfficeSkeleton = computed(() => localePending.value && Boolean(pendingProse.value?.boxOffice))

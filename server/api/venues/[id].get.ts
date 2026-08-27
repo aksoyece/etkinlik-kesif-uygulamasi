@@ -29,7 +29,16 @@ export default defineCachedEventHandler(async (event): Promise<VenueSummary> => 
   }
 
   if (wantLocale) {
-    return await localizeVenueCopy(venue)
+    const result = await localizeVenueCopy(venue)
+    // Nadir venue-only yolu: çeviri yoksa son çare ham metin
+    return {
+      ...result.venue,
+      parkingDetail: result.venue.parkingDetail || result.raw.parkingDetail,
+      generalRule: result.venue.generalRule || result.raw.generalRule,
+      childRule: result.venue.childRule || result.raw.childRule,
+      accessibilityDetail: result.venue.accessibilityDetail || result.raw.accessibilityDetail,
+      boxOffice: result.venue.boxOffice || result.raw.boxOffice
+    }
   }
 
   return localizeVenueShell(venue)
@@ -40,6 +49,6 @@ export default defineCachedEventHandler(async (event): Promise<VenueSummary> => 
     const id = getRouterParam(event, 'id') || ''
     const query = getQuery(event)
     const wantLocale = query.locale === '1' || query.locale === 'true'
-    return wantLocale ? `venue:v8:tr:${id}` : `venue:v8:shell:${id}`
+    return wantLocale ? `venue:v9:tr:${id}` : `venue:v9:shell:${id}`
   }
 })
