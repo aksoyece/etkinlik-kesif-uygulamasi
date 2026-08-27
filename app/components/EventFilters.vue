@@ -183,6 +183,9 @@ function onRangeComplete(value: DateRange) {
               locale="tr-TR"
               :number-of-months="1"
               class="w-full"
+              :ui="{
+                cellTrigger: 'text-[#1A1A1A] dark:text-[#F7F5F0] data-outside-view:text-neutral-400 dark:data-outside-view:text-neutral-500 data-highlighted:bg-[#E8432E]/25 dark:data-highlighted:bg-[#E8432E]/45 data-highlighted:text-[#1A1A1A] dark:data-highlighted:text-[#F7F5F0]'
+              }"
               @update:valid-model-value="onRangeComplete"
             />
           </div>

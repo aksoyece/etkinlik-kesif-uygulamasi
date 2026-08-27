@@ -32,11 +32,12 @@ body {
   color: var(--ticket-ink);
 }
 
-/* 1. RENK PALETİ: Koyu mod arka planı saf siyah veya #141414 yerine #151515 yapıldı */
+/* 1. RENK PALETİ: Koyu mod arka planı + açık metin (yoksa takvim günleri siyah kalır) */
 .dark body {
   background:
     radial-gradient(circle at 1px 1px, rgb(247 245 240 / 0.05) 1px, transparent 0) 0 0 / 18px 18px,
     #151515;
+  color: #F7F5F0;
 }
 
 .font-ticket {
