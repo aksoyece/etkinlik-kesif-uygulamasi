@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EventSummary, FavoriteEvent } from '#shared/types/event'
-import { isSourceTicketmasterImage, toFavoriteEvent } from '#shared/utils/event'
+import { toFavoriteEvent } from '#shared/utils/event'
 import { resolveEventTypeKey, resolveEventTypeLabel } from '#shared/utils/labels'
 
 const props = defineProps<{
@@ -12,7 +12,6 @@ const toast = useToast()
 
 const favorited = computed(() => favorites.isFavorite(props.event.id))
 const isHeartAnimating = ref(false)
-const imageBroken = ref(false)
 
 const genre = computed(() => ('genre' in props.event ? props.event.genre : undefined))
 const typeLabel = computed(() => resolveEventTypeLabel(props.event.category, genre.value))
@@ -22,16 +21,6 @@ const when = computed(() => props.event.dateLabel || 'Tarih açıklanacak')
 const venueName = computed(() => props.event.venue || 'Mekan açıklanacak')
 const cityName = computed(() => props.event.city || 'Şehir açıklanacak')
 const price = computed(() => props.event.priceLabel || 'Fiyat Ticketmaster’da görüntülenir')
-
-const coverSrc = computed(() =>
-  imageBroken.value ? '/placeholder-event.svg' : (props.event.image || '/placeholder-event.svg')
-)
-/** SOURCE afişleri cover ile zoom’lanır; contain ile tam görünür */
-const coverFitClass = computed(() =>
-  isSourceTicketmasterImage(props.event.image)
-    ? 'object-contain bg-neutral-950'
-    : 'object-cover object-center'
-)
 
 const categoryBadgeClass = computed(() => {
   const cat = typeKey.value.toUpperCase()
@@ -93,10 +82,6 @@ function onNavigateIntent() {
   seedFromSummary(props.event as EventSummary)
   prefetchEventDetail(props.event.id)
 }
-
-function onCoverError() {
-  imageBroken.value = true
-}
 </script>
 
 <template>
@@ -107,20 +92,16 @@ function onCoverError() {
       class="flex flex-col sm:flex-row flex-1 min-w-0 h-full text-inherit no-underline"
       @pointerdown="onNavigateIntent"
     >
-      <div class="relative block w-full sm:w-[40%] aspect-[4/3] overflow-hidden flex-none bg-neutral-900">
-        <img
-          :src="coverSrc"
+      <div class="relative block w-full sm:w-[40%] aspect-[4/3] overflow-hidden flex-none">
+        <EventCoverImage
+          :src="event.image"
           :alt="event.name"
-          class="h-full w-full transition-transform duration-500 group-hover:scale-105"
-          :class="coverFitClass"
-          loading="lazy"
-          decoding="async"
-          @error="onCoverError"
-        >
-        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+          mode="card"
+        />
+        <div class="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
 
         <span
-          class="font-ticket absolute bottom-3 left-3 rounded px-2 py-0.5 text-[9px] font-bold shadow-sm transition-colors duration-300"
+          class="font-ticket absolute bottom-3 left-3 z-[3] rounded px-2 py-0.5 text-[9px] font-bold shadow-sm transition-colors duration-300"
           :class="categoryBadgeClass"
         >
           {{ typeLabel }}

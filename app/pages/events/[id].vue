@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mapsUrl, toFavoriteEvent, uniqueGalleryImages, isSourceTicketmasterImage } from '#shared/utils/event'
+import { mapsUrl, toFavoriteEvent, uniqueGalleryImages } from '#shared/utils/event'
 import { buildGoogleCalendarUrl, buildIcsContent } from '#shared/utils/calendar'
 import { translateCategory, translateGenre, translateStatus } from '#shared/utils/labels'
 import { applyLocaleFixes } from '#shared/utils/localize'
@@ -40,11 +40,6 @@ const venueParking = computed(() => venueInfo.value?.parkingDetail ? applyLocale
 const venueRules = computed(() => venueInfo.value?.generalRule ? applyLocaleFixes(venueInfo.value.generalRule) : undefined)
 const venueAddress = computed(() => venueInfo.value?.address)
 const canBuyTicket = computed(() => isValidTicketUrl(event.value?.ticketUrl))
-const heroFitClass = computed(() =>
-  isSourceTicketmasterImage(event.value?.image)
-    ? 'object-contain bg-neutral-950'
-    : 'object-cover object-center'
-)
 
 const selectedImage = ref<string | null>(null)
 const galleryOpen = computed({
@@ -339,18 +334,16 @@ const barcodeStyle = computed(() => {
         <div class="space-y-8">
           <!-- Ana Bilet Görseli ve Başlık Alanı -->
           <div class="ticket-stub flex-col">
-            <div class="relative h-80 sm:h-96 w-full overflow-hidden bg-neutral-900">
-              <img
-                :src="event.image || '/placeholder-event.svg'"
+            <div class="relative h-80 sm:h-96 w-full overflow-hidden">
+              <EventCoverImage
+                :src="event.image"
                 :alt="event.name"
-                class="h-full w-full"
-                :class="heroFitClass"
-                fetchpriority="high"
-                decoding="async"
-              >
-              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                mode="hero"
+                eager
+              />
+              <div class="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <span
-                class="font-ticket absolute bottom-4 left-4 rounded px-2.5 py-1 text-xs font-bold shadow-md"
+                class="font-ticket absolute bottom-4 left-4 z-[3] rounded px-2.5 py-1 text-xs font-bold shadow-md"
                 :class="categoryBadgeClass"
               >
                 {{ categoryLabel }}
