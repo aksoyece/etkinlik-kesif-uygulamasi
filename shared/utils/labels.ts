@@ -100,6 +100,59 @@ export function translateCategory(name?: string | null): string {
   return trimmed
 }
 
+/** Segment boş / Miscellaneous / Undefined ise tür etiketi için yetersiz sayılır */
+export function isVagueCategory(name?: string | null): boolean {
+  if (!name?.trim()) {
+    return true
+  }
+  const upper = name.trim().toUpperCase()
+  return upper === 'UNDEFINED'
+    || upper === 'MISCELLANEOUS'
+    || upper === 'OTHER'
+    || upper.includes('MISCELLANEOUS')
+}
+
+/**
+ * Kart rozeti ve “Tür” alanı için ortak ham anahtar.
+ * Vague segment’te genre/subGenre’ye düşer.
+ */
+export function resolveEventTypeKey(category?: string | null, genre?: string | null): string {
+  if (!isVagueCategory(category) && category?.trim()) {
+    return category.trim()
+  }
+  if (genre?.trim() && genre.trim().toUpperCase() !== 'UNDEFINED') {
+    return genre.trim()
+  }
+  return category?.trim() || ''
+}
+
+/**
+ * Rozet + Tür satırı aynı metni gösterir (aynı kaynak + çeviri).
+ */
+export function resolveEventTypeLabel(category?: string | null, genre?: string | null): string {
+  const key = resolveEventTypeKey(category, genre)
+  if (!key) {
+    return 'Genel'
+  }
+
+  const upper = key.toUpperCase()
+  if (
+    CATEGORY_TR[key]
+    || upper.includes('MUSIC')
+    || upper.includes('SPORTS')
+    || upper.includes('ARTS')
+    || upper.includes('THEATRE')
+    || upper.includes('THEATER')
+    || upper.includes('FAMILY')
+    || upper.includes('FILM')
+    || upper.includes('MISCELLANEOUS')
+  ) {
+    return translateCategory(key)
+  }
+
+  return translateGenre(key)
+}
+
 export function translateGenre(name?: string | null): string {
   if (!name?.trim()) {
     return 'Genel'

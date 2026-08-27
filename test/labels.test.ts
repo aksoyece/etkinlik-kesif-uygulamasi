@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { translateCategory, translateGenre, translateStatus, formatUiNumber } from '../shared/utils/labels'
+import {
+  translateCategory,
+  translateGenre,
+  translateStatus,
+  formatUiNumber,
+  resolveEventTypeLabel,
+  resolveEventTypeKey
+} from '../shared/utils/labels'
 
 describe('etiket çevirileri', () => {
   it('kategorileri Türkçeleştirir', () => {
@@ -12,6 +19,13 @@ describe('etiket çevirileri', () => {
     expect(translateGenre('Jazz')).toBe('Caz')
     expect(translateGenre('Classical')).toBe('Klasik Müzik')
     expect(translateGenre('Undefined')).toBe('Genel')
+  })
+
+  it('Miscellaneous segment’te genre ile tutarlı tür etiketi üretir', () => {
+    expect(resolveEventTypeKey('Miscellaneous', 'Family')).toBe('Family')
+    expect(resolveEventTypeLabel('Miscellaneous', 'Family')).toBe('Aile')
+    expect(resolveEventTypeLabel('Music', 'Jazz')).toBe('Müzik')
+    expect(resolveEventTypeLabel('Sports', 'Football')).toBe('Spor')
   })
 
   it('durum kodlarını Türkçeleştirir', () => {
