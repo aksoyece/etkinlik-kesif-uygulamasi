@@ -15,6 +15,7 @@ const open = ref(false)
 const activeIndex = ref(-1)
 const debouncedQuery = ref('')
 const results = ref<QuickSearchResult[]>([])
+const totalResults = ref(0)
 const searching = ref(false)
 const searchError = ref(false)
 
@@ -39,6 +40,13 @@ const activeOptionId = computed(() =>
 const showEmpty = computed(() =>
   showPanel.value && !searching.value && !searchError.value && results.value.length === 0
 )
+const seeAllLabel = computed(() => {
+  const total = totalResults.value
+  if (total > 0) {
+    return `Tüm ${total} sonucu gör`
+  }
+  return 'Tüm sonuçları gör'
+})
 
 function updatePanelPosition() {
   const rect = inputWrapEl.value?.getBoundingClientRect()
@@ -56,6 +64,7 @@ async function runSearch(query: string) {
   const q = query.trim()
   if (q.length < QUICK_SEARCH_MIN_CHARS) {
     results.value = []
+    totalResults.value = 0
     searching.value = false
     searchError.value = false
     return
@@ -74,10 +83,12 @@ async function runSearch(query: string) {
     })
     if (seq !== requestSeq) return
     results.value = mapEventsToQuickSearchResults(data.events ?? [], QUICK_SEARCH_LIMIT)
+    totalResults.value = data.total ?? results.value.length
     activeIndex.value = results.value.length ? 0 : -1
   } catch {
     if (seq !== requestSeq) return
     results.value = []
+    totalResults.value = 0
     searchError.value = true
     activeIndex.value = -1
   } finally {
@@ -93,6 +104,7 @@ watch(keyword, (value) => {
   if (!value.trim()) {
     debouncedQuery.value = ''
     results.value = []
+    totalResults.value = 0
     searching.value = false
     searchError.value = false
     closePanel()
@@ -102,6 +114,7 @@ watch(keyword, (value) => {
   if (value.trim().length < QUICK_SEARCH_MIN_CHARS) {
     debouncedQuery.value = value
     results.value = []
+    totalResults.value = 0
     searching.value = false
     closePanel()
     return
@@ -329,7 +342,7 @@ onBeforeUnmount(() => {
           class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium text-[#E8432E] hover:bg-neutral-50 dark:hover:bg-neutral-800/70"
           @click="submitSearch"
         >
-          <span class="truncate">‘{{ debouncedQuery.trim() }}’ için tüm sonuçları gör</span>
+          <span class="truncate">{{ seeAllLabel }}</span>
           <UIcon
             name="i-lucide-arrow-right"
             class="size-4 flex-none"
